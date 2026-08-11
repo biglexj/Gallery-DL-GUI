@@ -1,0 +1,29 @@
+
+# Gradle y Kotlin
+.gradle/
+.kotlin/
+**/build/
+/build/
+
+# IDE y configuración local
+.idea/
+*.iml
+local.properties
+
+# Archivos temporales de agentes y pruebas manuales
+/test/
+/scratch/
+/temp/
+
+# Descargas de prueba y respaldos del motor
+/gallery-dl/
+/bin/gallery-dl/
+/bin/*.backup
+
+# Sistema operativo
+Thumbs.db
+.DS_Store
+
+# Artefactos de salida de release
+/release/
+
