@@ -1,0 +1,19 @@
+﻿# yaml-language-server: $schema=https://aka.ms/winget-manifest.installer.1.10.0.schema.json
+
+PackageIdentifier: biglexj.GalleryDLGUI
+PackageVersion: 0.0.1
+InstallerType: wix
+Scope: user
+InstallModes:
+  - interactive
+  - silent
+  - silentWithProgress
+UpgradeBehavior: install
+ProductCode: ' {9B562423-539E-327A-A169-BB0E38FE259C}'
+ReleaseDate: 2026-08-11
+Installers:
+  - Architecture: x64
+    InstallerUrl: https://github.com/biglexj/Gallery-DL-GUI/releases/download/v0.0.1/GalleryDL-GUI-Windows-0.0.1.msi
+    InstallerSha256: 194C82BC5A9A338DB68776FA3D8C761E0B96F5C61CC0454799DA43ED34EF7A31
+ManifestType: installer
+ManifestVersion: 1.10.0
