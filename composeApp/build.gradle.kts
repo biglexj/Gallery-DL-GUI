@@ -75,6 +75,23 @@ compose.desktop {
         }
         nativeDistributions {
             targetFormats(TargetFormat.Msi, TargetFormat.Exe, TargetFormat.Deb)
+            modules(
+                "java.base",
+                "java.desktop",
+                "java.prefs",
+                "java.logging",
+                "java.sql",
+                "java.management",
+                "java.naming",
+                "java.net.http",
+                "jdk.unsupported",
+                "jdk.crypto.ec"
+            )
+            jvmArgs(
+                "-Dfile.encoding=UTF-8",
+                "-Dsun.stdout.encoding=UTF-8",
+                "-Dsun.stderr.encoding=UTF-8"
+            )
             appResourcesRootDir.set(bundledAppResourcesDir)
             packageName = "GalleryDL-GUI"
             packageVersion = appVersion
@@ -89,7 +106,9 @@ compose.desktop {
                 upgradeUuid = "d7d11f71-2856-4b35-827c-9ee05a0b9a67"
                 shortcut = true
                 menu = true
+                menuGroup = "Gallery-DL GUI"
                 dirChooser = true
+                perUserInstall = true
                 iconFile.set(project.file("src/desktopMain/resources/icon.ico"))
             }
         }
