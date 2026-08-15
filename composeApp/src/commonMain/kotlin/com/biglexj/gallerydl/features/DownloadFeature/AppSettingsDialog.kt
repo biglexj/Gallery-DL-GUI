@@ -62,7 +62,7 @@ fun AppSettingsDialog(
                     )
                 }
 
-                Divider(color = MaterialTheme.colorScheme.outlineVariant)
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
 
                 // 2. Minimizar a la bandeja
                 Row(
@@ -72,12 +72,12 @@ fun AppSettingsDialog(
                 ) {
                     Column(modifier = Modifier.weight(1f).padding(end = 12.dp)) {
                         Text(
-                            text = "Minimizar a la bandeja del sistema",
+                            text = "Ocultar en la bandeja al cerrar (X)",
                             style = MaterialTheme.typography.bodyLarge,
                             fontWeight = FontWeight.SemiBold
                         )
                         Text(
-                            text = "Al pulsar cerrar (X), la ventana se oculta en el área de notificación de la barra de tareas.",
+                            text = "Al pulsar cerrar (X), la app permanece residente en segundo plano para que la extensión web y las descargas nunca se interrumpan.",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -88,7 +88,7 @@ fun AppSettingsDialog(
                     )
                 }
 
-                Divider(color = MaterialTheme.colorScheme.outlineVariant)
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
 
                 // 3. Conector de Extensión Web
                 Column(

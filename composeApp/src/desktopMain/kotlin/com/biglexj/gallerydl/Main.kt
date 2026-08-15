@@ -184,13 +184,7 @@ fun main(args: Array<String>) {
         Window(
             onCloseRequest = {
                 saveWindowState()
-                if (appSettings.minimizeToTray) {
-                    isVisible = false
-                } else {
-                    SingleInstanceLock.release()
-                    InterceptionServer.stop()
-                    exitApplication()
-                }
+                isVisible = false
             },
             title = "Gallery-DL GUI",
             state = windowState,
