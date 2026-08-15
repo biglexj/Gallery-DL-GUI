@@ -224,6 +224,7 @@ fun DownloadScreen(
                     onSetAutoStart = onSetAutoStart,
                     onSetMinimizeToTray = onSetMinimizeToTray,
                     onOpenCookiesFolder = { onOpenFolder("D:\\Documentos\\cookies") },
+                    onOpenUrl = onOpenUrl,
                     onDismiss = { showSettingsDialog = false }
                 )
             }
