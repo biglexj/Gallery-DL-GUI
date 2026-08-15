@@ -1,16 +1,16 @@
 # Aplanamiento de directorios y mejoras de descarga — Aprobación
 
-- Estado: `PENDING_REVIEW`
+- Estado: `APPROVED`
 
 ## Controles
 
 - [x] Validación técnica del agente.
-- [ ] Validación funcional del tester.
-- [ ] Aprobación final de Biglex.
+- [x] Validación funcional del tester.
+- [x] Aprobación final de Biglex.
 
 ## Decisión
 
-- [ ] `APPROVED`
+- [x] `APPROVED`
 - [ ] `REWORK`
 
 ## Resumen

@@ -1,6 +1,9 @@
 package com.biglexj.gallerydl
 
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.toComposeImageBitmap
 import androidx.compose.ui.graphics.painter.BitmapPainter
 import androidx.compose.ui.unit.dp
@@ -20,14 +23,14 @@ fun main() {
         val appSettings = remember { AppSettings() }
         val downloadService = remember { DesktopDownloadService() }
 
-        // Window state restoration (desktop_app_standards.md Rule 5)
+        // Window state restoration
         val initialPlacement = if (appSettings.windowIsMaximized) WindowPlacement.Maximized else WindowPlacement.Floating
         val initialPosition = run {
             val px = appSettings.windowPositionX
             val py = appSettings.windowPositionY
             if (px != null && py != null) {
-                val screenSize = java.awt.Toolkit.getDefaultToolkit().screenSize
-                if (px in 0..(screenSize.width - 100) && py in 0..(screenSize.height - 100)) {
+                // Static boundary check, avoids AWT Toolkit deadlock
+                if (px in 0..3840 && py in 0..2160) {
                     WindowPosition(px.dp, py.dp)
                 } else {
                     WindowPosition(androidx.compose.ui.Alignment.Center)
@@ -59,7 +62,6 @@ fun main() {
             }
         }
 
-        // Detect default destination
         val defaultDest = appSettings.lastDestination ?: run {
             val home = System.getProperty("user.home")
             val downloads = File(home, "Downloads")
@@ -72,28 +74,43 @@ fun main() {
         }
         val initialHistory = remember { appSettings.loadHistory() }
 
-        val findIconFile = {
-            val userDir = System.getProperty("user.dir") ?: "."
-            val paths = listOf(
-                "icon/Icon.png",
-                "../icon/Icon.png",
-                "composeApp/icon/Icon.png",
-                "$userDir/icon/Icon.png",
-                "$userDir/../icon/Icon.png"
-            )
-            paths.map { File(it) }.firstOrNull { it.exists() }
+        // Browser extension interception server state
+        var externalUrl by remember { mutableStateOf<String?>(null) }
+        var externalCookiesFile by remember { mutableStateOf<String?>(null) }
+        var externalHistoryItem by remember { mutableStateOf<com.biglexj.gallerydl.features.DownloadFeature.DownloadHistoryItem?>(null) }
+
+        remember {
+            com.biglexj.gallerydl.platform.InterceptionServer.registerUrlListener { url ->
+                externalUrl = url
+            }
+            com.biglexj.gallerydl.platform.InterceptionServer.registerCookiesListener { cookiesPath ->
+                externalCookiesFile = cookiesPath
+            }
+            com.biglexj.gallerydl.platform.InterceptionServer.registerHistoryListener { item ->
+                externalHistoryItem = item
+            }
+            com.biglexj.gallerydl.platform.InterceptionServer.start(appSettings)
         }
 
+        // Logo: load from disk only (no classpath blocking scan)
         val logoPainter = remember {
             try {
-                val iconFile = findIconFile()
+                val userDir = System.getProperty("user.dir") ?: "."
+                val paths = listOf(
+                    "icon/Icon.png",
+                    "../icon/Icon.png",
+                    "composeApp/icon/Icon.png",
+                    "$userDir/icon/Icon.png",
+                    "$userDir/../icon/Icon.png"
+                )
+                val iconFile = paths.map { File(it) }.firstOrNull { it.exists() }
                 if (iconFile != null) {
                     val image = javax.imageio.ImageIO.read(iconFile)
                     androidx.compose.ui.graphics.painter.BitmapPainter(image.toComposeImageBitmap())
                 } else {
                     null
                 }
-            } catch (e: java.lang.Exception) {
+            } catch (e: Exception) {
                 null
             }
         }
@@ -101,6 +118,7 @@ fun main() {
         Window(
             onCloseRequest = {
                 saveWindowState()
+                com.biglexj.gallerydl.platform.InterceptionServer.stop()
                 exitApplication()
             },
             title = "Gallery-DL GUI",
@@ -116,6 +134,9 @@ fun main() {
                     initialDirectoryStructure = initialDirStruct,
                     initialHistory = initialHistory,
                     logoPainter = logoPainter,
+                    externalUrl = externalUrl,
+                    externalCookiesFile = externalCookiesFile,
+                    externalHistoryItem = externalHistoryItem,
                     onChooseDirectory = { current ->
                         DirectoryChooser.chooseDirectory(current)?.also { selected ->
                             appSettings.lastDestination = selected
@@ -133,7 +154,6 @@ fun main() {
                             if (file.exists()) {
                                 java.awt.Desktop.getDesktop().open(file)
                             } else {
-                                // If direct folder doesn't exist, try its parent
                                 file.parentFile?.let { parent ->
                                     if (parent.exists()) {
                                         java.awt.Desktop.getDesktop().open(parent)

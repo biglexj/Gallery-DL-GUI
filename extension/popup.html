@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      width: 380px;
+      height: 560px;
+      display: flex;
+      flex-direction: column;
+      font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+      background: #0f172a;
+      color: #f8fafc;
+      overflow: hidden;
+      user-select: none;
+    }
+
+    /* Cabecera */
+    .header {
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 16px;
+      background: #1e293b;
+      border-bottom: 1px solid #334155;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .brand img {
+      width: 26px;
+      height: 26px;
+      border-radius: 6px;
+    }
+    .brand-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: #c084fc;
+      letter-spacing: -0.01em;
+    }
+    .badge-count {
+      background: #8b5cf6;
+      color: #ffffff;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 12px;
+    }
+
+    /* Área con scroll principal */
+    .scroll-container {
+      flex: 1;
+      overflow-y: auto;
+      padding: 14px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .scroll-container::-webkit-scrollbar { width: 6px; }
+    .scroll-container::-webkit-scrollbar-track { background: transparent; }
+    .scroll-container::-webkit-scrollbar-thumb { background: #334155; border-radius: 6px; }
+    .scroll-container::-webkit-scrollbar-thumb:hover { background: #475569; }
+
+    /* Tarjetas */
+    .card {
+      background: #1e293b;
+      border-radius: 10px;
+      padding: 12px 14px;
+      border: 1px solid #334155;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .card-caption {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: #94a3b8;
+    }
+    #page-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: #f1f5f9;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    #page-url {
+      font-size: 11px;
+      color: #64748b;
+      word-break: break-all;
+      max-height: 28px;
+      overflow: hidden;
+    }
+
+    /* Botones */
+    .btn-primary {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      width: 100%;
+      background: #8b5cf6;
+      color: #ffffff;
+      border: none;
+      padding: 9px 14px;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 13px;
+      cursor: pointer;
+      transition: all 0.15s ease-in-out;
+    }
+    .btn-primary:hover:not(:disabled) {
+      background: #7c3aed;
+      box-shadow: 0 4px 12px rgba(139, 92, 246, 0.35);
+    }
+    .btn-primary:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+
+    .btn-secondary {
+      width: 100%;
+      background: #334155;
+      color: #e2e8f0;
+      border: 1px solid #475569;
+      padding: 7px 12px;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 12px;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .btn-secondary:hover:not(:disabled) {
+      background: #475569;
+    }
+
+    .btn-danger-outline {
+      background: transparent;
+      border: 1px solid #ef4444;
+      color: #f87171;
+      font-size: 11px;
+      font-weight: 600;
+      padding: 3px 8px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .btn-danger-outline:hover {
+      background: rgba(239, 68, 68, 0.15);
+    }
+
+    /* Panel de imágenes */
+    .images-header-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .images-stat {
+      font-size: 13px;
+      font-weight: 600;
+      color: #cbd5e1;
+    }
+    .images-stat strong {
+      color: #c084fc;
+      font-size: 15px;
+    }
+
+    /* Grid de miniaturas con scroll propio */
+    .gallery-scroll-box {
+      max-height: 160px;
+      overflow-y: auto;
+      background: #0f172a;
+      border-radius: 8px;
+      padding: 6px;
+      border: 1px solid #334155;
+    }
+    .gallery-scroll-box::-webkit-scrollbar { width: 5px; }
+    .gallery-scroll-box::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+
+    .gallery-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 6px;
+    }
+    .gallery-item {
+      position: relative;
+      aspect-ratio: 1;
+      border-radius: 6px;
+      overflow: hidden;
+      background: #1e293b;
+      border: 1px solid #334155;
+    }
+    .gallery-item img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+    .gallery-item .item-num {
+      position: absolute;
+      bottom: 2px;
+      right: 3px;
+      background: rgba(0, 0, 0, 0.7);
+      color: #e2e8f0;
+      font-size: 9px;
+      font-weight: 700;
+      padding: 1px 4px;
+      border-radius: 3px;
+    }
+
+    .empty-state {
+      font-size: 12px;
+      color: #64748b;
+      text-align: center;
+      padding: 24px 8px;
+      line-height: 1.5;
+    }
+
+    /* Barra inferior */
+    .footer-status {
+      flex-shrink: 0;
+      background: #0b1120;
+      padding: 8px 16px;
+      border-top: 1px solid #1e293b;
+      font-size: 11px;
+      color: #94a3b8;
+      text-align: center;
+      min-height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Header -->
+  <header class="header">
+    <div class="brand">
+      <img src="icon.png" alt="Logo">
+      <span class="brand-title">Gallery-DL GUI</span>
+    </div>
+    <span class="badge-count" id="badge-total">0 img</span>
+  </header>
+
+  <!-- Scroll Container -->
+  <main class="scroll-container">
+
+    <!-- Tarjeta Página Actual -->
+    <section class="card">
+      <div class="card-caption">Página Activa</div>
+      <div id="page-title">Cargando...</div>
+      <div id="page-url"></div>
+      <button class="btn-primary" id="btn-download-gallery">
+        <span>⚡</span> Descargar Galería Completa
+      </button>
+    </section>
+
+    <!-- Tarjeta Imágenes Interceptadas -->
+    <section class="card">
+      <div class="images-header-row">
+        <span class="images-stat">Imágenes interceptadas: <strong id="img-count-num">0</strong></span>
+        <button class="btn-danger-outline" id="btn-clear-images">Limpiar</button>
+      </div>
+
+      <div class="gallery-scroll-box">
+        <div class="gallery-grid" id="gallery-grid">
+          <div class="empty-state" style="grid-column: 1 / -1;">
+            Navega por la galería o abre ilustraciones para capturar URLs directamente
+          </div>
+        </div>
+      </div>
+
+      <button class="btn-primary" id="btn-send-intercepted" disabled>
+        <span>📥</span> Enviar Imágenes Interceptadas a la App
+      </button>
+    </section>
+
+    <!-- Tarjeta Cookies -->
+    <section class="card">
+      <div class="card-caption">Bypass de Restricciones</div>
+      <button class="btn-secondary" id="btn-sync-cookies">
+        🔑 Sincronizar Cookies de Sesión
+      </button>
+    </section>
+
+  </main>
+
+  <!-- Footer Status -->
+  <footer class="footer-status" id="status-msg">
+    Listo para interceptar
+  </footer>
+
+  <script src="popup.js"></script>
+</body>
+</html>

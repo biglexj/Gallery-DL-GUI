@@ -41,6 +41,9 @@ fun DownloadScreen(
     onOpenFolder: (String) -> Unit,
     onOpenUrl: (String) -> Unit,
     logoPainter: androidx.compose.ui.graphics.painter.Painter? = null,
+    externalUrl: String? = null,
+    externalCookiesFile: String? = null,
+    externalHistoryItem: DownloadHistoryItem? = null,
     modifier: Modifier = Modifier
 ) {
     var url by remember { mutableStateOf("") }
@@ -57,6 +60,28 @@ fun DownloadScreen(
 
     // History state
     val history = remember { mutableStateListOf<DownloadHistoryItem>().apply { addAll(initialHistory) } }
+
+    LaunchedEffect(externalUrl) {
+        if (!externalUrl.isNullOrBlank()) {
+            url = externalUrl
+        }
+    }
+
+    LaunchedEffect(externalCookiesFile) {
+        if (!externalCookiesFile.isNullOrBlank()) {
+            logs.add("[System] Cookies de sesión sincronizadas desde el navegador.")
+        }
+    }
+
+    LaunchedEffect(externalHistoryItem) {
+        if (externalHistoryItem != null) {
+            if (!history.any { it.id == externalHistoryItem.id }) {
+                history.add(0, externalHistoryItem)
+                onSaveHistory(history.toList())
+                logs.add("[System] ✅ Descarga directa completada: ${externalHistoryItem.downloadedFiles.size} imágenes guardadas en ${externalHistoryItem.outputDirectory}")
+            }
+        }
+    }
 
     val coroutineScope = rememberCoroutineScope()
     val logsListState = rememberLazyListState()

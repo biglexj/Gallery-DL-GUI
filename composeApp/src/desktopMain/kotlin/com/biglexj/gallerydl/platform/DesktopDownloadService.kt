@@ -42,14 +42,18 @@ internal fun buildGalleryDlConfig(
         put("base-directory", JsonPrimitive(destination.replace('\\', '/')))
         directorySegments?.let { put("directory", directoryJson()) }
 
-        if (extractorKey.isNotBlank() && (directorySegments != null || extractorKey == "deviantart")) {
+        if (extractorKey.isNotBlank()) {
+            val syncedCookiesFile = File("D:\\Documentos\\cookies\\synced_cookies.txt")
+            val cookiesPath = if (syncedCookiesFile.exists()) syncedCookiesFile.absolutePath.replace('\\', '/') else null
+
             put(extractorKey, buildJsonObject {
                 directorySegments?.let { put("directory", directoryJson()) }
 
+                if (cookiesPath != null) {
+                    put("cookies", JsonPrimitive(cookiesPath))
+                }
+
                 if (extractorKey == "deviantart") {
-                    // Gallery-DL 1.32+ desactiva las descargas "original" de DeviantArt
-                    // por defecto. El ejecutable incluido aún usa el valor antiguo y genera
-                    // URLs WixMP que responden 400, así que replicamos el valor actual.
                     put("original", JsonPrimitive(false))
                 }
             })

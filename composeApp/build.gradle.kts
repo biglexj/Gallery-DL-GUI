@@ -79,6 +79,7 @@ compose.desktop {
                 shortcut = true
                 menu = true
                 dirChooser = true
+                iconFile.set(project.file("src/desktopMain/resources/icon.ico"))
             }
         }
     }

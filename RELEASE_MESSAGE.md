@@ -1,14 +1,14 @@
-# 🚀 Gallery-DL-GUI v0.0.1
+# 🚀 Gallery-DL-GUI v0.0.2
 
-Primera versión pública de la interfaz gráfica para organizar descargas compatibles con `gallery-dl` desde Windows.
+¡Lanzamiento de **Gallery-DL-GUI v0.0.2**! Esta actualización introduce el conector oficial para navegadores web, descargas directas para contenido protegido y sincronización inteligente del historial.
 
-## Novedades
+## ✨ Novedades destacadas
 
-- 🖼️ Descargas públicas mediante una interfaz visual.
-- 📁 Estructuras de carpetas configurables.
-- 🕘 Historial local con rutas y miniaturas.
-- 📜 Distribución GPL-2.0 con atribución al proyecto original.
+- 🧩 **Extensión de Navegador Oficial**: Conector para Chrome y Chromium para enviar descargas y sincronizar cookies al instante.
+- 🎯 **Bypass y Descargas de Contenido Restringido**: Intercepción transparente de URLs autenticadas para galerías e ilustraciones con restricción de edad.
+- 🕒 **Historial Sincronizado**: Registro inmediato de descargas interceptadas con miniaturas, títulos de colección y apertura de carpetas.
+- ⚡ **Arranque Ultrarrápido**: Inicialización de ventana optimizada y servidor local ligero de alta estabilidad.
+- 🎨 **Interfaz Expressive Refinada**: Panel de extensión y aplicación adaptados con Material 3 Expressive.
 
-## Licencia y código fuente
-
-Este lanzamiento debe publicarse junto con `LICENSE`, `NOTICE.md` y el archivo de código fuente correspondiente de `gallery-dl 1.31.7`.
+---
+*Desarrollado con pasión por [biglexj](https://github.com/biglexj)*
