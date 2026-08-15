@@ -111,19 +111,37 @@ fun main(args: Array<String>) {
             }
         }
 
-        // Logo image loading
+        // Logo image loading with classpath & filesystem fallback
         val awtImage = remember {
             try {
+                val resourceNames = listOf("Icon.png", "icon.png", "/Icon.png", "/icon.png")
+                var loaded: java.awt.image.BufferedImage? = null
+                for (name in resourceNames) {
+                    val stream = Thread.currentThread().contextClassLoader.getResourceAsStream(name)
+                        ?: Unit.javaClass.getResourceAsStream(name)
+                        ?: ClassLoader.getSystemResourceAsStream(name)
+                    if (stream != null) {
+                        loaded = stream.use { javax.imageio.ImageIO.read(it) }
+                        if (loaded != null) break
+                    }
+                }
+                if (loaded != null) return@remember loaded
+
+                val appResDir = System.getProperty("compose.application.resources.dir") ?: ""
                 val userDir = System.getProperty("user.dir") ?: "."
                 val paths = listOf(
+                    "$appResDir/Icon.png",
+                    "$appResDir/icon.png",
                     "icon/Icon.png",
+                    "icon/icon.png",
                     "../icon/Icon.png",
                     "composeApp/icon/Icon.png",
                     "$userDir/icon/Icon.png",
                     "$userDir/../icon/Icon.png"
                 )
-                val iconFile = paths.map { File(it) }.firstOrNull { it.exists() }
-                if (iconFile != null) javax.imageio.ImageIO.read(iconFile) else null
+                paths.map { File(it) }.firstOrNull { it.exists() }?.let { file ->
+                    javax.imageio.ImageIO.read(file)
+                }
             } catch (e: Exception) {
                 null
             }
