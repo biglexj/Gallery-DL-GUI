@@ -8,18 +8,32 @@ import kotlin.concurrent.thread
 
 /**
  * Garantía de Instancia Única (Single Instance Lock) para Gallery-DL-GUI.
- * Estandarizado según el ecosistema de Luna Fetch y Core-Docs.
- * Previene de forma infalible la duplicación de procesos e iconos duplicados en la bandeja del sistema.
+ * Estandarizado según el ecosistema de Luna Fetch y Core-Docs (desktop_app_standards.md Regla 1).
+ *
+ * En Producción (.exe / .msi / standalone): Bloquea instancias duplicadas y enfoca la ventana activa.
+ * En Desarrollo (./gradlew :composeApp:run / IDE): Bypass garantizado para permitir depuración continua sin cierres.
  */
 object SingleInstanceLock {
     private const val LOCK_PORT = 18275
     private var serverSocket: ServerSocket? = null
 
-    fun acquireOrBringToFront(): Boolean {
-        val isExplicitDev = System.getProperty("gallerydlgui.dev") == "true" ||
-                System.getProperty("idea.active") != null
+    fun isDevMode(): Boolean {
+        return System.getProperty("gallerydlgui.dev") == "true" ||
+                System.getProperty("idea.active") != null ||
+                System.getProperty("sun.java.command")?.let {
+                    it.contains("MainKt", ignoreCase = true) ||
+                    it.contains("Gradle", ignoreCase = true) ||
+                    it.contains("idea", ignoreCase = true)
+                } == true
+    }
 
-        if (isExplicitDev) {
+    fun acquireOrBringToFront(): Boolean {
+        if (isDevMode()) {
+            println("[SingleInstanceLock] Modo desarrollo activo. Bypass de bloqueo de instancia única permitido.")
+            // Intentar adquirir el socket de forma no bloqueante
+            runCatching {
+                serverSocket = ServerSocket(LOCK_PORT, 10, InetAddress.getByName("127.0.0.1"))
+            }
             return true
         }
 
@@ -27,7 +41,7 @@ object SingleInstanceLock {
             serverSocket = ServerSocket(LOCK_PORT, 10, InetAddress.getByName("127.0.0.1"))
             true
         } catch (e: Exception) {
-            // El puerto ya está en uso: otra instancia está activa
+            // El puerto ya está en uso: otra instancia está activa en producción
             notifyExistingInstance()
             false
         }

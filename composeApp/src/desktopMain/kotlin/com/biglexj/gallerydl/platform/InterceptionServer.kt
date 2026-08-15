@@ -1,14 +1,16 @@
 package com.biglexj.gallerydl.platform
 
 import com.biglexj.gallerydl.features.DownloadFeature.DownloadHistoryItem
+import com.sun.net.httpserver.HttpExchange
 import com.sun.net.httpserver.HttpServer
-import java.net.InetSocketAddress
 import java.io.File
+import java.net.InetSocketAddress
 import java.net.URI
 import java.net.http.HttpClient
 import java.net.http.HttpRequest
 import java.net.http.HttpResponse
 import java.time.Duration
+import java.util.concurrent.Executors
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -42,157 +44,188 @@ object InterceptionServer {
         historyListener = listener
     }
 
+    private fun handleCors(exchange: HttpExchange): Boolean {
+        exchange.responseHeaders.set("Access-Control-Allow-Origin", "*")
+        exchange.responseHeaders.set("Access-Control-Allow-Methods", "POST, GET, OPTIONS")
+        exchange.responseHeaders.set("Access-Control-Allow-Headers", "Content-Type, Accept, Authorization, *")
+        exchange.responseHeaders.set("Access-Control-Max-Age", "86400")
+
+        if (exchange.requestMethod.equals("OPTIONS", ignoreCase = true)) {
+            exchange.sendResponseHeaders(204, -1)
+            exchange.close()
+            return true
+        }
+        return false
+    }
+
     fun start(appSettings: AppSettings) {
         if (server != null) return
         Thread {
             try {
-                server = HttpServer.create(InetSocketAddress("127.0.0.1", 18274), 0).apply {
-                    createContext("/download") { exchange ->
-                        if (exchange.requestMethod == "POST") {
-                            try {
-                                val body = exchange.requestBody.bufferedReader(Charsets.UTF_8).readText()
-                                val urlPattern = """\"url\"\s*:\s*\"([^\"]+)\"""".toRegex()
-                                val match = urlPattern.find(body)
-                                val url = match?.groupValues?.get(1)
-                                if (url != null) {
-                                    CoroutineScope(Dispatchers.Main).launch {
-                                        urlListener?.invoke(url)
-                                    }
-                                    val response = "{\"status\":\"queued\"}"
-                                    exchange.responseHeaders.set("Content-Type", "application/json")
-                                    exchange.responseHeaders.set("Access-Control-Allow-Origin", "*")
-                                    exchange.sendResponseHeaders(200, response.length.toLong())
-                                    exchange.responseBody.use { it.write(response.toByteArray()) }
-                                } else {
-                                    exchange.sendResponseHeaders(400, 0)
-                                }
-                            } catch (e: Exception) {
-                                exchange.sendResponseHeaders(500, 0)
-                            }
-                        } else if (exchange.requestMethod == "OPTIONS") {
-                            exchange.responseHeaders.set("Access-Control-Allow-Origin", "*")
-                            exchange.responseHeaders.set("Access-Control-Allow-Methods", "POST, OPTIONS")
-                            exchange.responseHeaders.set("Access-Control-Allow-Headers", "Content-Type")
-                            exchange.sendResponseHeaders(204, -1)
-                        } else {
-                            exchange.sendResponseHeaders(405, 0)
-                        }
+                val s = HttpServer.create(InetSocketAddress("127.0.0.1", 18274), 50)
+                s.executor = Executors.newCachedThreadPool()
+
+                // ── /status: Verificación de salud y conectividad de la extensión ──────
+                s.createContext("/status") { exchange ->
+                    try {
+                        if (handleCors(exchange)) return@createContext
+                        val response = "{\"status\":\"online\",\"version\":\"0.0.2\"}"
+                        val bytes = response.toByteArray(Charsets.UTF_8)
+                        exchange.responseHeaders.set("Content-Type", "application/json")
+                        exchange.sendResponseHeaders(200, bytes.size.toLong())
+                        exchange.responseBody.use { it.write(bytes) }
+                    } catch (e: Exception) {
+                        exchange.sendResponseHeaders(500, 0)
+                    } finally {
+                        exchange.close()
                     }
-
-                    createContext("/cookies") { exchange ->
-                        if (exchange.requestMethod == "POST") {
-                            try {
-                                val body = exchange.requestBody.bufferedReader(Charsets.UTF_8).readText()
-                                val netscapeCookies = convertJsonCookiesToNetscape(body)
-                                if (netscapeCookies.isNotBlank()) {
-                                    val cookiesDir = File("D:\\Documentos\\cookies")
-                                    if (!cookiesDir.exists()) {
-                                        cookiesDir.mkdirs()
-                                    }
-                                    val cookiesFile = File(cookiesDir, "synced_cookies.txt")
-                                    cookiesFile.writeText(netscapeCookies, Charsets.UTF_8)
-                                    
-                                    val absolutePath = cookiesFile.absolutePath
-                                    appSettings.defaultBrowserCookies = absolutePath
-                                    
-                                    CoroutineScope(Dispatchers.Main).launch {
-                                        cookiesListener?.invoke(absolutePath)
-                                    }
-
-                                    val response = "{\"status\":\"synced\",\"path\":\"${absolutePath.replace("\\", "\\\\")}\"}"
-                                    exchange.responseHeaders.set("Content-Type", "application/json")
-                                    exchange.responseHeaders.set("Access-Control-Allow-Origin", "*")
-                                    exchange.sendResponseHeaders(200, response.length.toLong())
-                                    exchange.responseBody.use { it.write(response.toByteArray()) }
-                                } else {
-                                    exchange.sendResponseHeaders(400, 0)
-                                }
-                            } catch (e: Exception) {
-                                exchange.sendResponseHeaders(500, 0)
-                            }
-                        } else if (exchange.requestMethod == "OPTIONS") {
-                            exchange.responseHeaders.set("Access-Control-Allow-Origin", "*")
-                            exchange.responseHeaders.set("Access-Control-Allow-Methods", "POST, OPTIONS")
-                            exchange.responseHeaders.set("Access-Control-Allow-Headers", "Content-Type")
-                            exchange.sendResponseHeaders(204, -1)
-                        } else {
-                            exchange.sendResponseHeaders(405, 0)
-                        }
-                    }
-                    
-                    // ── /images: descarga directa de URLs interceptadas desde el navegador ──
-                    createContext("/images") { exchange ->
-                        val corsHeaders = mapOf(
-                            "Access-Control-Allow-Origin" to "*",
-                            "Access-Control-Allow-Methods" to "POST, OPTIONS",
-                            "Access-Control-Allow-Headers" to "Content-Type"
-                        )
-                        corsHeaders.forEach { (k, v) -> exchange.responseHeaders.set(k, v) }
-
-                        if (exchange.requestMethod == "OPTIONS") {
-                            exchange.sendResponseHeaders(204, -1)
-                            return@createContext
-                        }
-
-                        if (exchange.requestMethod != "POST") {
-                            exchange.sendResponseHeaders(405, 0)
-                            return@createContext
-                        }
-
-                        try {
-                            val body = exchange.requestBody.bufferedReader(Charsets.UTF_8).readText()
-
-                            // Extraer campos JSON manualmente (sin dependencia extra)
-                            val urlsMatch = "\"urls\"\\s*:\\s*\\[([^\\]]+)\\]".toRegex().find(body)
-                            val pageTitleMatch = "\"pageTitle\"\\s*:\\s*\"([^\"]+)\"".toRegex().find(body)
-                            val pageUrlMatch = "\"pageUrl\"\\s*:\\s*\"([^\"]+)\"".toRegex().find(body)
-
-                            val urlsRaw = urlsMatch?.groupValues?.get(1) ?: ""
-                            val pageTitle = pageTitleMatch?.groupValues?.get(1) ?: "Unnamed"
-                            val pageUrlStr = pageUrlMatch?.groupValues?.get(1) ?: ""
-
-                            // Parsear el array de URLs (cada una entre comillas)
-                            val urls = "\"([^\"]+)\"".toRegex()
-                                .findAll(urlsRaw)
-                                .map { it.groupValues[1] }
-                                .filter { it.startsWith("http") }
-                                .toList()
-
-                            if (urls.isEmpty()) {
-                                val err = "{\"error\":\"No URLs provided\"}"
-                                exchange.responseHeaders.set("Content-Type", "application/json")
-                                exchange.sendResponseHeaders(400, err.length.toLong())
-                                exchange.responseBody.use { it.write(err.toByteArray()) }
-                                return@createContext
-                            }
-
-                            // Lanzar descarga directa en coroutine de IO
-                            CoroutineScope(Dispatchers.IO).launch {
-                                downloadImagesDirectly(urls, pageTitle, pageUrlStr, appSettings)
-                            }
-
-                            // También notificar a la UI para logging visual
-                            CoroutineScope(Dispatchers.Main).launch {
-                                imagesListener?.invoke(urls, pageTitle, pageUrlStr)
-                            }
-
-                            val response = "{\"status\":\"queued\",\"queued\":${urls.size}}"
-                            exchange.responseHeaders.set("Content-Type", "application/json")
-                            exchange.sendResponseHeaders(200, response.length.toLong())
-                            exchange.responseBody.use { it.write(response.toByteArray()) }
-
-                        } catch (e: Exception) {
-                            println("[Server] Error en /images: ${e.localizedMessage}")
-                            exchange.sendResponseHeaders(500, 0)
-                        }
-                    }
-
-                    executor = null
-                    start()
                 }
+
+                // ── /download: Encolar URL de galería completa ─────────────────────────
+                s.createContext("/download") { exchange ->
+                    try {
+                        if (handleCors(exchange)) return@createContext
+                        if (!exchange.requestMethod.equals("POST", ignoreCase = true)) {
+                            exchange.sendResponseHeaders(405, 0)
+                            return@createContext
+                        }
+
+                        val body = exchange.requestBody.bufferedReader(Charsets.UTF_8).readText()
+                        val urlPattern = """\"url\"\s*:\s*\"([^\"]+)\"""".toRegex()
+                        val match = urlPattern.find(body)
+                        val url = match?.groupValues?.get(1)
+
+                        if (url != null) {
+                            CoroutineScope(Dispatchers.Main).launch {
+                                urlListener?.invoke(url)
+                            }
+                            val response = "{\"status\":\"queued\",\"url\":\"$url\"}"
+                            val bytes = response.toByteArray(Charsets.UTF_8)
+                            exchange.responseHeaders.set("Content-Type", "application/json")
+                            exchange.sendResponseHeaders(200, bytes.size.toLong())
+                            exchange.responseBody.use { it.write(bytes) }
+                        } else {
+                            val err = "{\"error\":\"Missing url parameter\"}"
+                            val bytes = err.toByteArray(Charsets.UTF_8)
+                            exchange.responseHeaders.set("Content-Type", "application/json")
+                            exchange.sendResponseHeaders(400, bytes.size.toLong())
+                            exchange.responseBody.use { it.write(bytes) }
+                        }
+                    } catch (e: Exception) {
+                        exchange.sendResponseHeaders(500, 0)
+                    } finally {
+                        exchange.close()
+                    }
+                }
+
+                // ── /cookies: Sincronización de cookies Netscape ───────────────────────
+                s.createContext("/cookies") { exchange ->
+                    try {
+                        if (handleCors(exchange)) return@createContext
+                        if (!exchange.requestMethod.equals("POST", ignoreCase = true)) {
+                            exchange.sendResponseHeaders(405, 0)
+                            return@createContext
+                        }
+
+                        val body = exchange.requestBody.bufferedReader(Charsets.UTF_8).readText()
+                        val netscapeCookies = convertJsonCookiesToNetscape(body)
+
+                        if (netscapeCookies.isNotBlank()) {
+                            val cookiesDir = File("D:\\Documentos\\cookies")
+                            if (!cookiesDir.exists()) cookiesDir.mkdirs()
+
+                            val cookiesFile = File(cookiesDir, "synced_cookies.txt")
+                            cookiesFile.writeText(netscapeCookies, Charsets.UTF_8)
+
+                            val absolutePath = cookiesFile.absolutePath
+                            appSettings.defaultBrowserCookies = absolutePath
+
+                            CoroutineScope(Dispatchers.Main).launch {
+                                cookiesListener?.invoke(absolutePath)
+                            }
+
+                            val response = "{\"status\":\"synced\",\"path\":\"${absolutePath.replace("\\", "\\\\")}\"}"
+                            val bytes = response.toByteArray(Charsets.UTF_8)
+                            exchange.responseHeaders.set("Content-Type", "application/json")
+                            exchange.sendResponseHeaders(200, bytes.size.toLong())
+                            exchange.responseBody.use { it.write(bytes) }
+                        } else {
+                            val err = "{\"error\":\"No cookies parsed\"}"
+                            val bytes = err.toByteArray(Charsets.UTF_8)
+                            exchange.responseHeaders.set("Content-Type", "application/json")
+                            exchange.sendResponseHeaders(400, bytes.size.toLong())
+                            exchange.responseBody.use { it.write(bytes) }
+                        }
+                    } catch (e: Exception) {
+                        exchange.sendResponseHeaders(500, 0)
+                    } finally {
+                        exchange.close()
+                    }
+                }
+
+                // ── /images: Descarga directa de URLs interceptadas del DOM ───────────
+                s.createContext("/images") { exchange ->
+                    try {
+                        if (handleCors(exchange)) return@createContext
+                        if (!exchange.requestMethod.equals("POST", ignoreCase = true)) {
+                            exchange.sendResponseHeaders(405, 0)
+                            return@createContext
+                        }
+
+                        val body = exchange.requestBody.bufferedReader(Charsets.UTF_8).readText()
+
+                        val urlsMatch = "\"urls\"\\s*:\\s*\\[([^\\]]+)\\]".toRegex().find(body)
+                        val pageTitleMatch = "\"pageTitle\"\\s*:\\s*\"([^\"]+)\"".toRegex().find(body)
+                        val pageUrlMatch = "\"pageUrl\"\\s*:\\s*\"([^\"]+)\"".toRegex().find(body)
+
+                        val urlsRaw = urlsMatch?.groupValues?.get(1) ?: ""
+                        val pageTitle = pageTitleMatch?.groupValues?.get(1) ?: "Unnamed"
+                        val pageUrlStr = pageUrlMatch?.groupValues?.get(1) ?: ""
+
+                        val urls = "\"([^\"]+)\"".toRegex()
+                            .findAll(urlsRaw)
+                            .map { it.groupValues[1] }
+                            .filter { it.startsWith("http") }
+                            .toList()
+
+                        if (urls.isEmpty()) {
+                            val err = "{\"error\":\"No URLs provided\"}"
+                            val bytes = err.toByteArray(Charsets.UTF_8)
+                            exchange.responseHeaders.set("Content-Type", "application/json")
+                            exchange.sendResponseHeaders(400, bytes.size.toLong())
+                            exchange.responseBody.use { it.write(bytes) }
+                            return@createContext
+                        }
+
+                        // Lanzar descarga directa en coroutine de IO
+                        CoroutineScope(Dispatchers.IO).launch {
+                            downloadImagesDirectly(urls, pageTitle, pageUrlStr, appSettings)
+                        }
+
+                        // Notificar a la UI
+                        CoroutineScope(Dispatchers.Main).launch {
+                            imagesListener?.invoke(urls, pageTitle, pageUrlStr)
+                        }
+
+                        val response = "{\"status\":\"queued\",\"queued\":${urls.size}}"
+                        val bytes = response.toByteArray(Charsets.UTF_8)
+                        exchange.responseHeaders.set("Content-Type", "application/json")
+                        exchange.sendResponseHeaders(200, bytes.size.toLong())
+                        exchange.responseBody.use { it.write(bytes) }
+
+                    } catch (e: Exception) {
+                        println("[Server Error] Excepción en /images: ${e.localizedMessage}")
+                        exchange.sendResponseHeaders(500, 0)
+                    } finally {
+                        exchange.close()
+                    }
+                }
+
+                s.start()
+                server = s
                 println("[Server] Servidor HTTP local de intercepción iniciado en el puerto 18274")
             } catch (e: Exception) {
-                println("[Server Error] Fallo al iniciar el servidor local: ${e.localizedMessage}")
+                println("[Server Error] Fallo al iniciar el servidor local en 18274: ${e.localizedMessage}")
             }
         }.start()
     }
@@ -237,15 +270,7 @@ object InterceptionServer {
     }
 
     /**
-     * Descarga directamente una lista de URLs de imagen pre-autenticadas (obtenidas
-     * del DOM del navegador). Evita el proceso de re-autenticación de gallery-dl
-     * para contenido de edad restringida.
-     *
-     * Las imágenes se guardan en:
-     *   [lastDestination] / [pageTitle sanitizado] / imagen_001.ext
-     *
-     * Si las cookies sincronizadas existen, se inyectan en el header Cookie de
-     * cada petición para mayor compatibilidad con CDNs protegidos.
+     * Descarga directamente una lista de URLs de imagen pre-autenticadas.
      */
     private fun downloadImagesDirectly(
         urls: List<String>,
@@ -256,7 +281,6 @@ object InterceptionServer {
         val base = appSettings.lastDestination
             ?: System.getProperty("user.home") + "/Downloads"
 
-        // Sanitizar el título para usarlo como nombre de carpeta
         val safeTitle = pageTitle
             .replace(Regex("[\\\\/:*?\"<>|]"), "_")
             .trim()
@@ -266,9 +290,7 @@ object InterceptionServer {
         val destDir = File(base, safeTitle)
         if (!destDir.exists()) destDir.mkdirs()
 
-        // Leer cookies sincronizadas para inyectarlas en los headers
         val cookiesHeader = buildCookieHeader(appSettings)
-
         val downloadedFiles = mutableListOf<String>()
         var failed = 0
 
@@ -277,7 +299,6 @@ object InterceptionServer {
                 val url = rawUrl.trim()
                 if (url.isBlank()) return@forEachIndexed
 
-                // Determinar extensión desde la URL
                 val extension = url.substringBefore("?")
                     .substringAfterLast(".")
                     .lowercase()
@@ -286,7 +307,6 @@ object InterceptionServer {
                 val fileName = "image_%04d.%s".format(index + 1, extension)
                 val outFile = File(destDir, fileName)
 
-                // Si ya existe y no está vacío, agregarlo a la lista de archivos descargados
                 if (outFile.exists() && outFile.length() > 0) {
                     downloadedFiles.add(outFile.absolutePath)
                     return@forEachIndexed
@@ -304,7 +324,6 @@ object InterceptionServer {
                 }
 
                 val request = requestBuilder.build()
-
                 val response = httpClient.send(request, HttpResponse.BodyHandlers.ofInputStream())
 
                 if (response.statusCode() in 200..299) {
@@ -328,7 +347,7 @@ object InterceptionServer {
 
         println("[Server] Descarga directa completada: ${downloadedFiles.size} OK, $failed errores → ${destDir.absolutePath}")
 
-        // ─── Registrar en el Historial de Descargas ──────────────────────────────
+        // Registrar en el Historial de Descargas
         if (downloadedFiles.isNotEmpty()) {
             val historyItem = DownloadHistoryItem(
                 id = "hist_" + System.currentTimeMillis(),
@@ -342,22 +361,16 @@ object InterceptionServer {
                 collectionTitle = safeTitle
             )
 
-            // Persistir en AppSettings
             val existingHistory = appSettings.loadHistory().toMutableList()
             existingHistory.add(0, historyItem)
             appSettings.saveHistory(existingHistory)
 
-            // Notificar a la UI en tiempo real
             CoroutineScope(Dispatchers.Main).launch {
                 historyListener?.invoke(historyItem)
             }
         }
     }
 
-    /**
-     * Construye un header Cookie desde el archivo Netscape sincronizado
-     * para inyectarlo en las peticiones HTTP directas.
-     */
     private fun buildCookieHeader(appSettings: AppSettings): String {
         val cookiesPath = appSettings.defaultBrowserCookies
         val cookiesFile = if (!cookiesPath.isNullOrBlank()) File(cookiesPath) else null

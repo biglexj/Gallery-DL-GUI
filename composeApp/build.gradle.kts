@@ -63,6 +63,7 @@ kotlin {
 compose.desktop {
     application {
         mainClass = "com.biglexj.gallerydl.MainKt"
+        jvmArgs("-Dgallerydlgui.dev=true")
         val jpackageJdk: String? = listOf(
             "C:/Program Files/Microsoft/jdk-17.0.19.10-hotspot",
             "C:/Program Files/Java/jdk-17",
