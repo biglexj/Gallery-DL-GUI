@@ -13,15 +13,27 @@ import androidx.compose.ui.window.WindowPosition
 import androidx.compose.ui.window.application
 import androidx.compose.ui.window.rememberWindowState
 import com.biglexj.gallerydl.features.DownloadFeature.DirectoryStructure
+import com.biglexj.gallerydl.features.DownloadFeature.DownloadHistoryItem
 import com.biglexj.gallerydl.platform.AppSettings
 import com.biglexj.gallerydl.platform.DesktopDownloadService
 import com.biglexj.gallerydl.platform.DirectoryChooser
+import com.biglexj.gallerydl.platform.InterceptionServer
+import com.biglexj.gallerydl.platform.ModernTrayManager
+import com.biglexj.gallerydl.platform.SingleInstanceLock
 import java.io.File
 
-fun main() {
+fun main(args: Array<String>) {
+    // ── Single Instance Lock Guarantee ──────────────────────────────────────────
+    if (!SingleInstanceLock.acquireOrBringToFront()) {
+        kotlin.system.exitProcess(0)
+    }
+
+    val isAutostart = args.contains("--autostart")
+
     application {
         val appSettings = remember { AppSettings() }
         val downloadService = remember { DesktopDownloadService() }
+        var isVisible by remember { mutableStateOf(!isAutostart) }
 
         // Window state restoration
         val initialPlacement = if (appSettings.windowIsMaximized) WindowPlacement.Maximized else WindowPlacement.Floating
@@ -29,7 +41,6 @@ fun main() {
             val px = appSettings.windowPositionX
             val py = appSettings.windowPositionY
             if (px != null && py != null) {
-                // Static boundary check, avoids AWT Toolkit deadlock
                 if (px in 0..3840 && py in 0..2160) {
                     WindowPosition(px.dp, py.dp)
                 } else {
@@ -77,23 +88,31 @@ fun main() {
         // Browser extension interception server state
         var externalUrl by remember { mutableStateOf<String?>(null) }
         var externalCookiesFile by remember { mutableStateOf<String?>(null) }
-        var externalHistoryItem by remember { mutableStateOf<com.biglexj.gallerydl.features.DownloadFeature.DownloadHistoryItem?>(null) }
+        var externalHistoryItem by remember { mutableStateOf<DownloadHistoryItem?>(null) }
+
+        var autoStartState by remember { mutableStateOf(appSettings.autoStart) }
+        var minimizeToTrayState by remember { mutableStateOf(appSettings.minimizeToTray) }
 
         remember {
-            com.biglexj.gallerydl.platform.InterceptionServer.registerUrlListener { url ->
+            InterceptionServer.registerUrlListener { url ->
                 externalUrl = url
+                isVisible = true
             }
-            com.biglexj.gallerydl.platform.InterceptionServer.registerCookiesListener { cookiesPath ->
+            InterceptionServer.registerCookiesListener { cookiesPath ->
                 externalCookiesFile = cookiesPath
             }
-            com.biglexj.gallerydl.platform.InterceptionServer.registerHistoryListener { item ->
+            InterceptionServer.registerHistoryListener { item ->
                 externalHistoryItem = item
             }
-            com.biglexj.gallerydl.platform.InterceptionServer.start(appSettings)
+            InterceptionServer.start(appSettings)
+
+            SingleInstanceLock.listenForFocusRequests {
+                isVisible = true
+            }
         }
 
-        // Logo: load from disk only (no classpath blocking scan)
-        val logoPainter = remember {
+        // Logo image loading
+        val awtImage = remember {
             try {
                 val userDir = System.getProperty("user.dir") ?: "."
                 val paths = listOf(
@@ -104,26 +123,53 @@ fun main() {
                     "$userDir/../icon/Icon.png"
                 )
                 val iconFile = paths.map { File(it) }.firstOrNull { it.exists() }
-                if (iconFile != null) {
-                    val image = javax.imageio.ImageIO.read(iconFile)
-                    androidx.compose.ui.graphics.painter.BitmapPainter(image.toComposeImageBitmap())
-                } else {
-                    null
-                }
+                if (iconFile != null) javax.imageio.ImageIO.read(iconFile) else null
             } catch (e: Exception) {
                 null
             }
         }
 
+        val logoPainter = remember(awtImage) {
+            awtImage?.let { BitmapPainter(it.toComposeImageBitmap()) }
+        }
+
+        // Setup System Tray
+        remember(awtImage) {
+            val trayImg = awtImage ?: java.awt.image.BufferedImage(16, 16, java.awt.image.BufferedImage.TYPE_INT_ARGB)
+            ModernTrayManager.setupTray(
+                image = trayImg,
+                tooltip = "Gallery-DL GUI",
+                onOpenApp = { isVisible = true },
+                onOpenDownloadsFolder = {
+                    try {
+                        val file = File(defaultDest)
+                        if (file.exists()) java.awt.Desktop.getDesktop().open(file)
+                    } catch (_: Exception) {}
+                },
+                onQuitApp = {
+                    saveWindowState()
+                    SingleInstanceLock.release()
+                    InterceptionServer.stop()
+                    exitApplication()
+                }
+            )
+        }
+
         Window(
             onCloseRequest = {
                 saveWindowState()
-                com.biglexj.gallerydl.platform.InterceptionServer.stop()
-                exitApplication()
+                if (appSettings.minimizeToTray) {
+                    isVisible = false
+                } else {
+                    SingleInstanceLock.release()
+                    InterceptionServer.stop()
+                    exitApplication()
+                }
             },
             title = "Gallery-DL GUI",
             state = windowState,
             icon = logoPainter,
+            visible = isVisible,
         ) {
             androidx.compose.runtime.CompositionLocalProvider(
                 androidx.compose.foundation.LocalContextMenuRepresentation provides androidx.compose.foundation.DarkDefaultContextMenuRepresentation
@@ -137,6 +183,16 @@ fun main() {
                     externalUrl = externalUrl,
                     externalCookiesFile = externalCookiesFile,
                     externalHistoryItem = externalHistoryItem,
+                    autoStart = autoStartState,
+                    minimizeToTray = minimizeToTrayState,
+                    onSetAutoStart = { enabled ->
+                        autoStartState = enabled
+                        appSettings.autoStart = enabled
+                    },
+                    onSetMinimizeToTray = { enabled ->
+                        minimizeToTrayState = enabled
+                        appSettings.minimizeToTray = enabled
+                    },
                     onChooseDirectory = { current ->
                         DirectoryChooser.chooseDirectory(current)?.also { selected ->
                             appSettings.lastDestination = selected

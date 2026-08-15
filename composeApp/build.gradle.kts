@@ -1,5 +1,6 @@
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 import org.gradle.api.tasks.Sync
+import java.io.File
 
 plugins {
     alias(libs.plugins.kotlin.multiplatform)
@@ -62,7 +63,16 @@ kotlin {
 compose.desktop {
     application {
         mainClass = "com.biglexj.gallerydl.MainKt"
-        javaHome = System.getenv("JAVA_HOME") ?: "C:/Program Files/Microsoft/jdk-17.0.19.10-hotspot"
+        val jpackageJdk: String? = listOf(
+            "C:/Program Files/Microsoft/jdk-17.0.19.10-hotspot",
+            "C:/Program Files/Java/jdk-17",
+            "C:/Program Files/Eclipse Adoptium/jdk-17",
+            System.getenv("JAVA_HOME") ?: ""
+        ).firstOrNull { it.isNotBlank() && File(it, "bin/jpackage.exe").exists() }
+
+        if (jpackageJdk != null) {
+            javaHome = jpackageJdk
+        }
         nativeDistributions {
             targetFormats(TargetFormat.Msi, TargetFormat.Exe, TargetFormat.Deb)
             appResourcesRootDir.set(bundledAppResourcesDir)

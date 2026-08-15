@@ -19,6 +19,48 @@ class AppSettings(
         encodeDefaults = true
     }
 
+    init {
+        if (autoStart) {
+            applyAutoStart(true)
+        }
+    }
+
+    var minimizeToTray: Boolean
+        get() = prefs.getBoolean("minimize_to_tray", true)
+        set(value) = prefs.putBoolean("minimize_to_tray", value)
+
+    var autoStart: Boolean
+        get() = prefs.getBoolean("auto_start", false)
+        set(value) {
+            prefs.putBoolean("auto_start", value)
+            applyAutoStart(value)
+        }
+
+    private val isWindows = System.getProperty("os.name")?.lowercase()?.contains("win") == true
+
+    private fun applyAutoStart(enable: Boolean) {
+        runCatching {
+            val exePath = ProcessHandle.current().info().command().orElse(null) ?: return
+            if (exePath.endsWith("java.exe", ignoreCase = true) || exePath.endsWith("javaw.exe", ignoreCase = true) ||
+                exePath.endsWith("/java", ignoreCase = true)) {
+                return
+            }
+            if (isWindows) {
+                val key = "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Run"
+                val valueName = "GalleryDL-GUI"
+                if (enable) {
+                    Runtime.getRuntime().exec(
+                        arrayOf("reg", "add", key, "/v", valueName, "/t", "REG_SZ", "/d", "\"$exePath\" --autostart", "/f")
+                    )
+                } else {
+                    Runtime.getRuntime().exec(
+                        arrayOf("reg", "delete", key, "/v", valueName, "/f")
+                    )
+                }
+            }
+        }
+    }
+
     var windowWidth: Int
         get() = prefs.getInt("window_width", 1024) // Slightly wider by default as requested
         set(value) = prefs.putInt("window_width", value)

@@ -44,10 +44,15 @@ fun DownloadScreen(
     externalUrl: String? = null,
     externalCookiesFile: String? = null,
     externalHistoryItem: DownloadHistoryItem? = null,
+    autoStart: Boolean = false,
+    minimizeToTray: Boolean = true,
+    onSetAutoStart: (Boolean) -> Unit = {},
+    onSetMinimizeToTray: (Boolean) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     var url by remember { mutableStateOf("") }
     var destination by remember { mutableStateOf(defaultDestination) }
+    var showSettingsDialog by remember { mutableStateOf(false) }
     
     // Directory structure settings
     val structureOptions = DirectoryStructure.values().toList()
@@ -170,33 +175,57 @@ fun DownloadScreen(
         ) {
             // Header
             Row(
+                modifier = Modifier.fillMaxWidth().padding(bottom = 4.dp),
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(16.dp),
-                modifier = Modifier.padding(bottom = 4.dp)
+                horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                logoPainter?.let { painter ->
-                    Image(
-                        painter = painter,
-                        contentDescription = "App Logo",
-                        contentScale = ContentScale.Crop,
-                        modifier = Modifier
-                            .size(64.dp)
-                            .clip(RoundedCornerShape(16.dp))
-                    )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(16.dp),
+                    modifier = Modifier.weight(1f)
+                ) {
+                    logoPainter?.let { painter ->
+                        Image(
+                            painter = painter,
+                            contentDescription = "App Logo",
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier
+                                .size(64.dp)
+                                .clip(RoundedCornerShape(16.dp))
+                        )
+                    }
+                    Column {
+                        Text(
+                            text = "Gallery-DL GUI",
+                            style = MaterialTheme.typography.headlineMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                        Text(
+                            text = "Descargador de galerías de imágenes rápido y flexible",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
                 }
-                Column {
-                    Text(
-                        text = "Gallery-DL GUI",
-                        style = MaterialTheme.typography.headlineMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.primary
-                    )
-                    Text(
-                        text = "Descargador de galerías de imágenes rápido y flexible",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+
+                OutlinedButton(
+                    onClick = { showSettingsDialog = true },
+                    shape = RoundedCornerShape(10.dp)
+                ) {
+                    Text("⚙️ Ajustes")
                 }
+            }
+
+            if (showSettingsDialog) {
+                AppSettingsDialog(
+                    autoStart = autoStart,
+                    minimizeToTray = minimizeToTray,
+                    onSetAutoStart = onSetAutoStart,
+                    onSetMinimizeToTray = onSetMinimizeToTray,
+                    onOpenCookiesFolder = { onOpenFolder("D:\\Documentos\\cookies") },
+                    onDismiss = { showSettingsDialog = false }
+                )
             }
 
             if (isWide) {
