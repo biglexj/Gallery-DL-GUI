@@ -14,8 +14,11 @@ import kotlin.concurrent.thread
  * En Desarrollo (./gradlew :composeApp:run / IDE): Bypass garantizado para permitir depuración continua sin cierres.
  */
 object SingleInstanceLock {
-    private const val LOCK_PORT = 18275
+    private const val LOCK_PORT_PROD = 18275
+    private const val LOCK_PORT_DEV = 18285
     private var serverSocket: ServerSocket? = null
+
+    private val lockPort get() = if (isDevMode()) LOCK_PORT_DEV else LOCK_PORT_PROD
 
     fun isDevMode(): Boolean {
         return System.getProperty("gallerydlgui.dev") == "true" ||
@@ -29,16 +32,15 @@ object SingleInstanceLock {
 
     fun acquireOrBringToFront(): Boolean {
         if (isDevMode()) {
-            println("[SingleInstanceLock] Modo desarrollo activo. Bypass de bloqueo de instancia única permitido.")
-            // Intentar adquirir el socket de forma no bloqueante
+            println("[SingleInstanceLock] Modo desarrollo activo (puerto dev: $lockPort). Bypass de bloqueo de instancia única permitido.")
             runCatching {
-                serverSocket = ServerSocket(LOCK_PORT, 10, InetAddress.getByName("127.0.0.1"))
+                serverSocket = ServerSocket(lockPort, 10, InetAddress.getByName("127.0.0.1"))
             }
             return true
         }
 
         return try {
-            serverSocket = ServerSocket(LOCK_PORT, 10, InetAddress.getByName("127.0.0.1"))
+            serverSocket = ServerSocket(lockPort, 10, InetAddress.getByName("127.0.0.1"))
             true
         } catch (e: Exception) {
             // El puerto ya está en uso: otra instancia está activa en producción
@@ -49,7 +51,7 @@ object SingleInstanceLock {
 
     private fun notifyExistingInstance() {
         runCatching {
-            Socket(InetAddress.getByName("127.0.0.1"), LOCK_PORT).use { socket ->
+            Socket(InetAddress.getByName("127.0.0.1"), lockPort).use { socket ->
                 socket.soTimeout = 2500
                 val writer = socket.getOutputStream().bufferedWriter()
                 writer.write("FOCUS\n")

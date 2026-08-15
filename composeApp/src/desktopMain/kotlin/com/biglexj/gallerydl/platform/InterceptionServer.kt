@@ -16,6 +16,10 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
 object InterceptionServer {
+    private const val SERVER_PORT_PROD = 18274
+    private const val SERVER_PORT_DEV = 18284
+    private val serverPort get() = if (SingleInstanceLock.isDevMode()) SERVER_PORT_DEV else SERVER_PORT_PROD
+
     private var server: HttpServer? = null
     private var urlListener: ((String) -> Unit)? = null
     private var cookiesListener: ((String) -> Unit)? = null
@@ -62,7 +66,8 @@ object InterceptionServer {
         if (server != null) return
         Thread {
             try {
-                val s = HttpServer.create(InetSocketAddress("127.0.0.1", 18274), 50)
+                val port = serverPort
+                val s = HttpServer.create(InetSocketAddress("127.0.0.1", port), 50)
                 s.executor = Executors.newCachedThreadPool()
 
                 // ── /status: Verificación de salud y conectividad de la extensión ──────
@@ -223,9 +228,9 @@ object InterceptionServer {
 
                 s.start()
                 server = s
-                println("[Server] Servidor HTTP local de intercepción iniciado en el puerto 18274")
+                println("[Server] Servidor HTTP local de intercepción iniciado en el puerto $port")
             } catch (e: Exception) {
-                println("[Server Error] Fallo al iniciar el servidor local en 18274: ${e.localizedMessage}")
+                println("[Server Error] Fallo al iniciar el servidor local en $serverPort: ${e.localizedMessage}")
             }
         }.start()
     }
