@@ -1,11 +1,8 @@
 package com.biglexj.gallerydl
 
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.setValue
-import androidx.compose.ui.graphics.toComposeImageBitmap
+import androidx.compose.runtime.*
 import androidx.compose.ui.graphics.painter.BitmapPainter
+import androidx.compose.ui.graphics.toComposeImageBitmap
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.WindowPlacement
@@ -23,7 +20,7 @@ import com.biglexj.gallerydl.platform.SingleInstanceLock
 import java.io.File
 
 fun main(args: Array<String>) {
-    // ── Single Instance Lock Guarantee ──────────────────────────────────────────
+    // ── Single Instance Lock Guarantee (desktop_app_standards.md) ───────────
     if (!SingleInstanceLock.acquireOrBringToFront()) {
         kotlin.system.exitProcess(0)
     }
@@ -42,7 +39,7 @@ fun main(args: Array<String>) {
             val py = appSettings.windowPositionY
             if (px != null && py != null) {
                 val screenSize = java.awt.Toolkit.getDefaultToolkit().screenSize
-                if (px >= 0 && px <= (screenSize.width - 400) && py >= 0 && py <= (screenSize.height - 300)) {
+                if (px in 0..(screenSize.width - 200) && py in 0..(screenSize.height - 200)) {
                     WindowPosition(px.dp, py.dp)
                 } else {
                     WindowPosition(androidx.compose.ui.Alignment.Center)
@@ -55,38 +52,22 @@ fun main(args: Array<String>) {
         val windowState = rememberWindowState(
             placement = initialPlacement,
             position = initialPosition,
-            width = appSettings.windowWidth.coerceIn(800, 3840).dp,
-            height = appSettings.windowHeight.coerceIn(600, 2160).dp,
+            width = appSettings.windowWidth.dp,
+            height = appSettings.windowHeight.dp,
         )
 
         fun saveWindowState() {
             if (windowState.placement == WindowPlacement.Maximized) {
                 appSettings.windowIsMaximized = true
-            } else if (windowState.placement == WindowPlacement.Floating && !windowState.isMinimized) {
+            } else {
                 appSettings.windowIsMaximized = false
-                val w = windowState.size.width.value.toInt()
-                val h = windowState.size.height.value.toInt()
-                if (w in 600..3840 && h in 400..2160) {
-                    appSettings.windowWidth = w
-                    appSettings.windowHeight = h
-                }
+                appSettings.windowWidth = windowState.size.width.value.toInt()
+                appSettings.windowHeight = windowState.size.height.value.toInt()
                 val pos = windowState.position
                 if (pos is WindowPosition.Absolute) {
-                    val x = pos.x.value.toInt()
-                    val y = pos.y.value.toInt()
-                    val screenSize = java.awt.Toolkit.getDefaultToolkit().screenSize
-                    if (x in 0..(screenSize.width - 200) && y in 0..(screenSize.height - 200)) {
-                        appSettings.windowPositionX = x
-                        appSettings.windowPositionY = y
-                    }
+                    appSettings.windowPositionX = pos.x.value.toInt()
+                    appSettings.windowPositionY = pos.y.value.toInt()
                 }
-            }
-        }
-
-        // Continuous State Observation
-        androidx.compose.runtime.LaunchedEffect(windowState.placement, windowState.size, windowState.position) {
-            if (!windowState.isMinimized) {
-                saveWindowState()
             }
         }
 
@@ -110,6 +91,14 @@ fun main(args: Array<String>) {
         var autoStartState by remember { mutableStateOf(appSettings.autoStart) }
         var minimizeToTrayState by remember { mutableStateOf(appSettings.minimizeToTray) }
 
+        // Listen for focus requests from duplicate launches to unminimize/bring app window to front
+        remember {
+            SingleInstanceLock.listenForFocusRequests {
+                if (windowState.isMinimized) windowState.isMinimized = false
+                isVisible = true
+            }
+        }
+
         remember {
             InterceptionServer.registerUrlListener { url ->
                 externalUrl = url
@@ -123,44 +112,15 @@ fun main(args: Array<String>) {
                 externalHistoryItem = item
             }
             InterceptionServer.start(appSettings)
-
-            SingleInstanceLock.listenForFocusRequests {
-                if (windowState.isMinimized) windowState.isMinimized = false
-                isVisible = true
-            }
         }
 
-        // Logo image loading with classpath & filesystem fallback
+        // Logo image loading
         val awtImage = remember {
             try {
-                val resourceNames = listOf("Icon.png", "icon.png", "/Icon.png", "/icon.png")
-                var loaded: java.awt.image.BufferedImage? = null
-                for (name in resourceNames) {
-                    val stream = Thread.currentThread().contextClassLoader.getResourceAsStream(name)
-                        ?: Unit.javaClass.getResourceAsStream(name)
-                        ?: ClassLoader.getSystemResourceAsStream(name)
-                    if (stream != null) {
-                        loaded = stream.use { javax.imageio.ImageIO.read(it) }
-                        if (loaded != null) break
-                    }
-                }
-                if (loaded != null) return@remember loaded
-
-                val appResDir = System.getProperty("compose.application.resources.dir") ?: ""
-                val userDir = System.getProperty("user.dir") ?: "."
-                val paths = listOf(
-                    "$appResDir/Icon.png",
-                    "$appResDir/icon.png",
-                    "icon/Icon.png",
-                    "icon/icon.png",
-                    "../icon/Icon.png",
-                    "composeApp/icon/Icon.png",
-                    "$userDir/icon/Icon.png",
-                    "$userDir/../icon/Icon.png"
-                )
-                paths.map { File(it) }.firstOrNull { it.exists() }?.let { file ->
-                    javax.imageio.ImageIO.read(file)
-                }
+                val stream = Thread.currentThread().contextClassLoader.getResourceAsStream("Icon.png")
+                    ?: ClassLoader.getSystemResourceAsStream("Icon.png")
+                    ?: File("icon/Icon.png").takeIf { it.exists() }?.inputStream()
+                stream?.use { javax.imageio.ImageIO.read(it) }
             } catch (e: Exception) {
                 null
             }
@@ -171,7 +131,7 @@ fun main(args: Array<String>) {
         }
 
         // Setup System Tray
-        val trayIcon = remember(awtImage) {
+        remember(awtImage) {
             val trayImg = awtImage ?: java.awt.image.BufferedImage(16, 16, java.awt.image.BufferedImage.TYPE_INT_ARGB)
             ModernTrayManager.setupTray(
                 image = trayImg,
@@ -192,16 +152,16 @@ fun main(args: Array<String>) {
             )
         }
 
-        androidx.compose.runtime.DisposableEffect(trayIcon) {
-            onDispose {
-                trayIcon?.let { t -> runCatching { java.awt.SystemTray.getSystemTray().remove(t) } }
-            }
-        }
-
         Window(
             onCloseRequest = {
                 saveWindowState()
-                isVisible = false
+                if (appSettings.minimizeToTray) {
+                    isVisible = false
+                } else {
+                    SingleInstanceLock.release()
+                    InterceptionServer.stop()
+                    exitApplication()
+                }
             },
             title = "Gallery-DL GUI",
             state = windowState,
