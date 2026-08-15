@@ -160,7 +160,7 @@ fun main(args: Array<String>) {
         }
 
         // Setup System Tray
-        remember(awtImage) {
+        val trayIcon = remember(awtImage) {
             val trayImg = awtImage ?: java.awt.image.BufferedImage(16, 16, java.awt.image.BufferedImage.TYPE_INT_ARGB)
             ModernTrayManager.setupTray(
                 image = trayImg,
@@ -179,6 +179,12 @@ fun main(args: Array<String>) {
                     exitApplication()
                 }
             )
+        }
+
+        androidx.compose.runtime.DisposableEffect(trayIcon) {
+            onDispose {
+                trayIcon?.let { t -> runCatching { java.awt.SystemTray.getSystemTray().remove(t) } }
+            }
         }
 
         Window(
