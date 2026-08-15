@@ -42,7 +42,7 @@ fun main(args: Array<String>) {
             val py = appSettings.windowPositionY
             if (px != null && py != null) {
                 val screenSize = java.awt.Toolkit.getDefaultToolkit().screenSize
-                if (px in 0..(screenSize.width - 100) && py in 0..(screenSize.height - 100)) {
+                if (px >= 0 && px <= (screenSize.width - 400) && py >= 0 && py <= (screenSize.height - 300)) {
                     WindowPosition(px.dp, py.dp)
                 } else {
                     WindowPosition(androidx.compose.ui.Alignment.Center)
@@ -55,28 +55,39 @@ fun main(args: Array<String>) {
         val windowState = rememberWindowState(
             placement = initialPlacement,
             position = initialPosition,
-            width = appSettings.windowWidth.dp,
-            height = appSettings.windowHeight.dp,
+            width = appSettings.windowWidth.coerceIn(800, 3840).dp,
+            height = appSettings.windowHeight.coerceIn(600, 2160).dp,
         )
 
         fun saveWindowState() {
             if (windowState.placement == WindowPlacement.Maximized) {
                 appSettings.windowIsMaximized = true
-            } else {
+            } else if (windowState.placement == WindowPlacement.Floating && !windowState.isMinimized) {
                 appSettings.windowIsMaximized = false
-                appSettings.windowWidth = windowState.size.width.value.toInt()
-                appSettings.windowHeight = windowState.size.height.value.toInt()
+                val w = windowState.size.width.value.toInt()
+                val h = windowState.size.height.value.toInt()
+                if (w in 600..3840 && h in 400..2160) {
+                    appSettings.windowWidth = w
+                    appSettings.windowHeight = h
+                }
                 val pos = windowState.position
                 if (pos is WindowPosition.Absolute) {
-                    appSettings.windowPositionX = pos.x.value.toInt()
-                    appSettings.windowPositionY = pos.y.value.toInt()
+                    val x = pos.x.value.toInt()
+                    val y = pos.y.value.toInt()
+                    val screenSize = java.awt.Toolkit.getDefaultToolkit().screenSize
+                    if (x in 0..(screenSize.width - 200) && y in 0..(screenSize.height - 200)) {
+                        appSettings.windowPositionX = x
+                        appSettings.windowPositionY = y
+                    }
                 }
             }
         }
 
         // Continuous State Observation
         androidx.compose.runtime.LaunchedEffect(windowState.placement, windowState.size, windowState.position) {
-            saveWindowState()
+            if (!windowState.isMinimized) {
+                saveWindowState()
+            }
         }
 
         val defaultDest = appSettings.lastDestination ?: run {

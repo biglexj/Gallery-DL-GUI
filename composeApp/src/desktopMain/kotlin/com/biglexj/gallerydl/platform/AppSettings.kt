@@ -62,12 +62,12 @@ class AppSettings(
     }
 
     var windowWidth: Int
-        get() = prefs.getInt("window_width", 1024) // Slightly wider by default as requested
-        set(value) = prefs.putInt("window_width", value)
+        get() = prefs.getInt("window_width", 1024).coerceIn(800, 3840)
+        set(value) = prefs.putInt("window_width", value.coerceIn(800, 3840))
 
     var windowHeight: Int
-        get() = prefs.getInt("window_height", 768)
-        set(value) = prefs.putInt("window_height", value)
+        get() = prefs.getInt("window_height", 768).coerceIn(600, 2160)
+        set(value) = prefs.putInt("window_height", value.coerceIn(600, 2160))
 
     var windowPositionX: Int?
         get() = prefs.getInt("window_x", -1).takeIf { it != -1 }
