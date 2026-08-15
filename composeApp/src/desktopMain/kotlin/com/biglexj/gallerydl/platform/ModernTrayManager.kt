@@ -1,38 +1,25 @@
 package com.biglexj.gallerydl.platform
 
-import java.awt.BasicStroke
-import java.awt.Color
-import java.awt.Component
-import java.awt.Cursor
-import java.awt.Dimension
-import java.awt.Font
-import java.awt.Graphics
-import java.awt.Graphics2D
-import java.awt.Image
-import java.awt.Point
-import java.awt.RenderingHints
-import java.awt.SystemTray
-import java.awt.Toolkit
-import java.awt.TrayIcon
-import java.awt.Window
-import java.awt.event.MouseAdapter
-import java.awt.event.MouseEvent
-import java.awt.event.WindowEvent
-import java.awt.event.WindowFocusListener
-import javax.swing.BoxLayout
-import javax.swing.JDialog
-import javax.swing.JPanel
-import javax.swing.JSeparator
-import javax.swing.SwingUtilities
-import javax.swing.Timer
+import java.awt.*
+import java.awt.event.*
+import javax.swing.*
 import javax.swing.border.EmptyBorder
 
 enum class TrayIconType { APP, SETTINGS, FOLDER, EXIT }
 
 object ModernTrayManager {
 
+    private var cachedDarkMode: Boolean = false
+    private var lastDarkModeCheck: Long = 0
+
     private fun isSystemDarkMode(): Boolean {
-        return runCatching {
+        val now = System.currentTimeMillis()
+        if (now - lastDarkModeCheck < 30000) {
+            return cachedDarkMode
+        }
+        lastDarkModeCheck = now
+        // Consulta no bloqueante en hilo secundario o retorno rápido de caché
+        cachedDarkMode = runCatching {
             val proc = Runtime.getRuntime().exec(arrayOf("reg", "query",
                 "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize",
                 "/v", "AppsUseLightTheme"))
@@ -40,6 +27,7 @@ object ModernTrayManager {
             proc.waitFor()
             text.contains("0x0")
         }.getOrDefault(false)
+        return cachedDarkMode
     }
 
     fun setupTray(
@@ -51,150 +39,154 @@ object ModernTrayManager {
     ): TrayIcon? {
         if (!SystemTray.isSupported()) return null
 
-        val dialog = JDialog()
-        dialog.isUndecorated = true
-        dialog.isAlwaysOnTop = true
-        dialog.background = Color(0, 0, 0, 0)
-        dialog.type = Window.Type.POPUP
-
-        var justOpened = false
-
-        dialog.addWindowFocusListener(object : WindowFocusListener {
-            override fun windowGainedFocus(e: WindowEvent) {}
-            override fun windowLostFocus(e: WindowEvent) {
-                if (!justOpened) {
-                    dialog.isVisible = false
-                }
-            }
-        })
-
         val itemWidth = 160
         val itemHeight = 32
+        var popupDialog: JDialog? = null
 
-        val mainPanel = object : JPanel() {
-            init {
-                layout = BoxLayout(this, BoxLayout.Y_AXIS)
-                border = EmptyBorder(6, 6, 6, 6)
-                isOpaque = false
-            }
+        fun getOrCreatePopup(): JDialog {
+            popupDialog?.let { return it }
 
-            override fun paintComponent(g: Graphics) {
-                val g2 = g.create() as Graphics2D
-                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON)
-                val isDark = isSystemDarkMode()
-                g2.color = if (isDark) Color(0x0f, 0x17, 0x2a) else Color(0xf8, 0xfa, 0xfc)
-                g2.fillRoundRect(0, 0, width, height, 12, 12)
-                g2.color = if (isDark) Color(0x33, 0x41, 0x55) else Color(0xe2, 0xe8, 0xf0)
-                g2.drawRoundRect(0, 0, width - 1, height - 1, 12, 12)
-                g2.dispose()
-                super.paintComponent(g)
-            }
-        }
+            val dialog = JDialog()
+            dialog.isUndecorated = true
+            dialog.isAlwaysOnTop = true
+            dialog.background = Color(0, 0, 0, 0)
+            dialog.type = Window.Type.POPUP
 
-        fun createItem(text: String, iconType: TrayIconType, onClick: () -> Unit): JPanel {
-            return object : JPanel() {
-                private var isHovered = false
+            var justOpened = false
 
+            dialog.addWindowFocusListener(object : WindowFocusListener {
+                override fun windowGainedFocus(e: WindowEvent) {}
+                override fun windowLostFocus(e: WindowEvent) {
+                    if (!justOpened) {
+                        dialog.isVisible = false
+                    }
+                }
+            })
+
+            val mainPanel = object : JPanel() {
                 init {
-                    layout = null
+                    layout = BoxLayout(this, BoxLayout.Y_AXIS)
+                    border = EmptyBorder(6, 6, 6, 6)
                     isOpaque = false
-                    alignmentX = Component.LEFT_ALIGNMENT
-                    cursor = Cursor.getPredefinedCursor(Cursor.HAND_CURSOR)
-                    minimumSize = Dimension(itemWidth, itemHeight)
-                    preferredSize = Dimension(itemWidth, itemHeight)
-                    maximumSize = Dimension(itemWidth, itemHeight)
-
-                    addMouseListener(object : MouseAdapter() {
-                        override fun mouseEntered(e: MouseEvent) { isHovered = true; repaint() }
-                        override fun mouseExited(e: MouseEvent) { isHovered = false; repaint() }
-                        override fun mouseClicked(e: MouseEvent) {
-                            dialog.isVisible = false
-                            onClick()
-                        }
-                    })
                 }
 
                 override fun paintComponent(g: Graphics) {
                     val g2 = g.create() as Graphics2D
                     g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON)
-                    g2.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON)
-
                     val isDark = isSystemDarkMode()
-                    val textColor: Color
-                    val iconColor: Color
-
-                    if (isHovered) {
-                        g2.color = Color(0x8b, 0x5c, 0xf6) // Purple Material Expressive
-                        g2.fillRoundRect(2, 1, width - 4, height - 2, 8, 8)
-                        textColor = Color.WHITE
-                        iconColor = Color.WHITE
-                    } else {
-                        textColor = if (isDark) Color(0xf8, 0xfa, 0xfc) else Color(0x0f, 0x17, 0x2a)
-                        iconColor = if (isDark) Color(0xc0, 0x84, 0xfc) else Color(0x8b, 0x5c, 0xf6)
-                    }
-
-                    drawVectorIcon(g2, iconType, 10, (height - 16) / 2, iconColor)
-
-                    g2.font = Font("Segoe UI", Font.PLAIN, 12)
-                    g2.color = textColor
-                    val fm = g2.fontMetrics
-                    val textY = (height - fm.height) / 2 + fm.ascent
-                    g2.drawString(text, 32, textY)
+                    g2.color = if (isDark) Color(0x0f, 0x17, 0x2a) else Color(0xf8, 0xfa, 0xfc)
+                    g2.fillRoundRect(0, 0, width, height, 12, 12)
+                    g2.color = if (isDark) Color(0x33, 0x41, 0x55) else Color(0xe2, 0xe8, 0xf0)
+                    g2.drawRoundRect(0, 0, width - 1, height - 1, 12, 12)
                     g2.dispose()
+                    super.paintComponent(g)
                 }
             }
+
+            fun createItem(text: String, iconType: TrayIconType, onClick: () -> Unit): JPanel {
+                return object : JPanel() {
+                    private var isHovered = false
+
+                    init {
+                        layout = null
+                        isOpaque = false
+                        alignmentX = Component.LEFT_ALIGNMENT
+                        cursor = Cursor.getPredefinedCursor(Cursor.HAND_CURSOR)
+                        minimumSize = Dimension(itemWidth, itemHeight)
+                        preferredSize = Dimension(itemWidth, itemHeight)
+                        maximumSize = Dimension(itemWidth, itemHeight)
+
+                        addMouseListener(object : MouseAdapter() {
+                            override fun mouseEntered(e: MouseEvent) { isHovered = true; repaint() }
+                            override fun mouseExited(e: MouseEvent) { isHovered = false; repaint() }
+                            override fun mouseClicked(e: MouseEvent) {
+                                dialog.isVisible = false
+                                onClick()
+                            }
+                        })
+                    }
+
+                    override fun paintComponent(g: Graphics) {
+                        val g2 = g.create() as Graphics2D
+                        g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON)
+                        g2.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON)
+
+                        val isDark = isSystemDarkMode()
+                        val textColor: Color
+                        val iconColor: Color
+
+                        if (isHovered) {
+                            g2.color = Color(0x8b, 0x5c, 0xf6) // Purple Material Expressive
+                            g2.fillRoundRect(2, 1, width - 4, height - 2, 8, 8)
+                            textColor = Color.WHITE
+                            iconColor = Color.WHITE
+                        } else {
+                            textColor = if (isDark) Color(0xf8, 0xfa, 0xfc) else Color(0x0f, 0x17, 0x2a)
+                            iconColor = if (isDark) Color(0xc0, 0x84, 0xfc) else Color(0x8b, 0x5c, 0xf6)
+                        }
+
+                        drawVectorIcon(g2, iconType, 10, (height - 16) / 2, iconColor)
+
+                        g2.font = Font("Segoe UI", Font.PLAIN, 12)
+                        g2.color = textColor
+                        val fm = g2.fontMetrics
+                        val textY = (height - fm.height) / 2 + fm.ascent
+                        g2.drawString(text, 32, textY)
+                        g2.dispose()
+                    }
+                }
+            }
+
+            mainPanel.add(createItem("Abrir Gallery-DL GUI", TrayIconType.APP, onOpenApp))
+            mainPanel.add(createItem("Ver descargas", TrayIconType.FOLDER, onOpenDownloadsFolder))
+            mainPanel.add(object : JSeparator() {
+                init {
+                    alignmentX = Component.LEFT_ALIGNMENT
+                    minimumSize = Dimension(itemWidth, 2)
+                    preferredSize = Dimension(itemWidth, 2)
+                    maximumSize = Dimension(itemWidth, 2)
+                    border = EmptyBorder(2, 4, 2, 4)
+                }
+                override fun paintComponent(g: Graphics) {
+                    val g2 = g.create() as Graphics2D
+                    val isDark = isSystemDarkMode()
+                    g2.color = if (isDark) Color(0x33, 0x41, 0x55) else Color(0xe2, 0xe8, 0xf0)
+                    g2.drawLine(4, 1, width - 8, 1)
+                    g2.dispose()
+                }
+            })
+            mainPanel.add(createItem("Salir", TrayIconType.EXIT, onQuitApp))
+
+            dialog.contentPane = mainPanel
+            dialog.pack()
+            popupDialog = dialog
+            return dialog
         }
-
-        mainPanel.add(createItem("Abrir Gallery-DL GUI", TrayIconType.APP, onOpenApp))
-        mainPanel.add(createItem("Ver descargas", TrayIconType.FOLDER, onOpenDownloadsFolder))
-        mainPanel.add(object : JSeparator() {
-            init {
-                alignmentX = Component.LEFT_ALIGNMENT
-                minimumSize = Dimension(itemWidth, 2)
-                preferredSize = Dimension(itemWidth, 2)
-                maximumSize = Dimension(itemWidth, 2)
-                border = EmptyBorder(2, 4, 2, 4)
-            }
-            override fun paintComponent(g: Graphics) {
-                val g2 = g.create() as Graphics2D
-                val isDark = isSystemDarkMode()
-                g2.color = if (isDark) Color(0x33, 0x41, 0x55) else Color(0xe2, 0xe8, 0xf0)
-                g2.drawLine(4, 1, width - 8, 1)
-                g2.dispose()
-            }
-        })
-        mainPanel.add(createItem("Salir", TrayIconType.EXIT, onQuitApp))
-
-        dialog.contentPane = mainPanel
-        dialog.pack()
 
         val trayIcon = TrayIcon(image, tooltip).apply {
             isImageAutoSize = true
         }
 
         fun showWindowAtTray(x: Int, y: Int) {
+            val dialog = getOrCreatePopup()
             if (dialog.isVisible) return
 
-            mainPanel.repaint()
             val screenSize = Toolkit.getDefaultToolkit().screenSize
             var wx = x
             var wy = y - dialog.height - 10
             if (wx + dialog.width > screenSize.width) wx = screenSize.width - dialog.width - 10
             if (wy < 0) wy = y + 10
 
-            justOpened = true
             dialog.location = Point(wx, wy)
             dialog.isVisible = true
             dialog.toFront()
             dialog.requestFocus()
-
-            Timer(300) { justOpened = false }.apply { isRepeats = false; start() }
         }
 
         trayIcon.addMouseListener(object : MouseAdapter() {
             override fun mouseClicked(e: MouseEvent) {
                 if (e.button == MouseEvent.BUTTON1) {
-                    dialog.isVisible = false
+                    popupDialog?.isVisible = false
                     onOpenApp()
                 }
             }
