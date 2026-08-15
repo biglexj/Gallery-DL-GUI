@@ -35,13 +35,14 @@ fun main(args: Array<String>) {
         val downloadService = remember { DesktopDownloadService() }
         var isVisible by remember { mutableStateOf(!isAutostart) }
 
-        // Window state restoration
+        // ── Window State Persistence (desktop_app_standards.md Rule 5) ────────
         val initialPlacement = if (appSettings.windowIsMaximized) WindowPlacement.Maximized else WindowPlacement.Floating
         val initialPosition = run {
             val px = appSettings.windowPositionX
             val py = appSettings.windowPositionY
             if (px != null && py != null) {
-                if (px in 0..3840 && py in 0..2160) {
+                val screenSize = java.awt.Toolkit.getDefaultToolkit().screenSize
+                if (px in 0..(screenSize.width - 100) && py in 0..(screenSize.height - 100)) {
                     WindowPosition(px.dp, py.dp)
                 } else {
                     WindowPosition(androidx.compose.ui.Alignment.Center)
@@ -73,6 +74,11 @@ fun main(args: Array<String>) {
             }
         }
 
+        // Continuous State Observation
+        androidx.compose.runtime.LaunchedEffect(windowState.placement, windowState.size, windowState.position) {
+            saveWindowState()
+        }
+
         val defaultDest = appSettings.lastDestination ?: run {
             val home = System.getProperty("user.home")
             val downloads = File(home, "Downloads")
@@ -96,6 +102,7 @@ fun main(args: Array<String>) {
         remember {
             InterceptionServer.registerUrlListener { url ->
                 externalUrl = url
+                if (windowState.isMinimized) windowState.isMinimized = false
                 isVisible = true
             }
             InterceptionServer.registerCookiesListener { cookiesPath ->
@@ -107,6 +114,7 @@ fun main(args: Array<String>) {
             InterceptionServer.start(appSettings)
 
             SingleInstanceLock.listenForFocusRequests {
+                if (windowState.isMinimized) windowState.isMinimized = false
                 isVisible = true
             }
         }
