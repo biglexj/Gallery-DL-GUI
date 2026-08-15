@@ -62,6 +62,7 @@ kotlin {
 compose.desktop {
     application {
         mainClass = "com.biglexj.gallerydl.MainKt"
+        javaHome = System.getenv("JAVA_HOME") ?: "C:/Program Files/Microsoft/jdk-17.0.19.10-hotspot"
         nativeDistributions {
             targetFormats(TargetFormat.Msi, TargetFormat.Exe, TargetFormat.Deb)
             appResourcesRootDir.set(bundledAppResourcesDir)
