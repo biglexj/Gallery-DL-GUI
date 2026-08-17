@@ -168,7 +168,7 @@ fun DownloadScreen(
     }
 
     BoxWithConstraints(modifier = modifier.fillMaxSize().padding(16.dp)) {
-        val isWide = maxWidth >= 900.dp
+        val isNarrow = maxWidth < 640.dp
 
         Column(
             modifier = Modifier.fillMaxSize(),
@@ -230,69 +230,8 @@ fun DownloadScreen(
                 )
             }
 
-            if (isWide) {
-                // Two Column Layout
-                Row(
-                    modifier = Modifier.fillMaxWidth().weight(1f),
-                    horizontalArrangement = Arrangement.spacedBy(16.dp)
-                ) {
-                    // Left Column (Settings & Controls)
-                    Column(
-                        modifier = Modifier.weight(1.1f),
-                        verticalArrangement = Arrangement.spacedBy(14.dp)
-                    ) {
-                        SettingsCard(
-                            url = url,
-                            onUrlChange = { url = it },
-                            destination = destination,
-                            onChooseDirectory = {
-                                coroutineScope.launch {
-                                    onChooseDirectory(destination)?.let { destination = it }
-                                }
-                            },
-                            structureOptions = structureOptions,
-                            selectedStructure = selectedStructure,
-                            onStructureChange = {
-                                selectedStructure = it
-                                onSaveDirectoryStructure(it)
-                            },
-                            isDownloading = isDownloading,
-                            onDownloadClick = onStartDownload,
-                            statusText = statusText
-                        )
-                    }
-
-                    // Right Column (History & Logs)
-                    Column(
-                        modifier = Modifier.weight(0.9f),
-                        verticalArrangement = Arrangement.spacedBy(16.dp)
-                    ) {
-                        HistoryCard(
-                            history = history,
-                            onClearHistory = {
-                                history.clear()
-                                onSaveHistory(emptyList())
-                            },
-                            onRemoveItem = { item ->
-                                history.remove(item)
-                                onSaveHistory(history.toList())
-                            },
-                            onOpenFolder = onOpenFolder,
-                            onOpenUrl = onOpenUrl,
-                            onOpenInPrisma = onOpenInPrisma,
-                            listState = historyListState,
-                            modifier = Modifier.weight(1.1f)
-                        )
-
-                        LogsCard(
-                            logs = logs,
-                            listState = logsListState,
-                            modifier = Modifier.weight(0.9f)
-                        )
-                    }
-                }
-            } else {
-                // Compact Single Column Layout
+            if (isNarrow) {
+                // Compact Single Column Layout for narrow screens
                 Column(
                     modifier = Modifier.fillMaxWidth().weight(1f).verticalScroll(rememberScrollState()),
                     verticalArrangement = Arrangement.spacedBy(16.dp)
@@ -317,6 +256,12 @@ fun DownloadScreen(
                         statusText = statusText
                     )
 
+                    LogsCard(
+                        logs = logs,
+                        listState = logsListState,
+                        modifier = Modifier.fillMaxWidth().height(240.dp)
+                    )
+
                     HistoryCard(
                         history = history,
                         onClearHistory = {
@@ -331,14 +276,68 @@ fun DownloadScreen(
                         onOpenUrl = onOpenUrl,
                         onOpenInPrisma = onOpenInPrisma,
                         listState = historyListState,
-                        modifier = Modifier.height(280.dp)
+                        modifier = Modifier.fillMaxWidth().height(320.dp)
                     )
+                }
+            } else {
+                // Two Column Layout (Left: Settings & Logs Console; Right: Download History)
+                Row(
+                    modifier = Modifier.fillMaxWidth().weight(1f),
+                    horizontalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    // Left Column (Settings on top & Console below)
+                    Column(
+                        modifier = Modifier.weight(1.05f).fillMaxHeight(),
+                        verticalArrangement = Arrangement.spacedBy(14.dp)
+                    ) {
+                        SettingsCard(
+                            url = url,
+                            onUrlChange = { url = it },
+                            destination = destination,
+                            onChooseDirectory = {
+                                coroutineScope.launch {
+                                    onChooseDirectory(destination)?.let { destination = it }
+                                }
+                            },
+                            structureOptions = structureOptions,
+                            selectedStructure = selectedStructure,
+                            onStructureChange = {
+                                selectedStructure = it
+                                onSaveDirectoryStructure(it)
+                            },
+                            isDownloading = isDownloading,
+                            onDownloadClick = onStartDownload,
+                            statusText = statusText
+                        )
 
-                    LogsCard(
-                        logs = logs,
-                        listState = logsListState,
-                        modifier = Modifier.height(240.dp)
-                    )
+                        LogsCard(
+                            logs = logs,
+                            listState = logsListState,
+                            modifier = Modifier.fillMaxWidth().weight(1f)
+                        )
+                    }
+
+                    // Right Column (Download History taking full column height)
+                    Column(
+                        modifier = Modifier.weight(0.95f).fillMaxHeight()
+                    ) {
+                        HistoryCard(
+                            history = history,
+                            onClearHistory = {
+                                history.clear()
+                                onSaveHistory(emptyList())
+                            },
+                            onRemoveItem = { item ->
+                                history.remove(item)
+                                onSaveHistory(history.toList())
+                            },
+                            onOpenFolder = onOpenFolder,
+                            onOpenUrl = onOpenUrl,
+                            onOpenInPrisma = onOpenInPrisma,
+                            listState = historyListState,
+                            modifier = Modifier.fillMaxSize()
+                        )
+                    }
                 }
             }
         }
