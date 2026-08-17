@@ -83,8 +83,9 @@ fun main(args: Array<String>) {
         }
         val initialHistory = remember { appSettings.loadHistory() }
 
-        // Browser extension interception server state
-        var externalUrl by remember { mutableStateOf<String?>(null) }
+        // Browser extension interception server & CLI args state
+        val cliUrl = args.firstOrNull { it.startsWith("http://", ignoreCase = true) || it.startsWith("https://", ignoreCase = true) }
+        var externalUrl by remember { mutableStateOf<String?>(cliUrl) }
         var externalCookiesFile by remember { mutableStateOf<String?>(null) }
         var externalHistoryItem by remember { mutableStateOf<DownloadHistoryItem?>(null) }
 
