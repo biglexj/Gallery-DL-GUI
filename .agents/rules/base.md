@@ -44,9 +44,6 @@ Si necesitas referencias sobre la arquitectura, el lenguaje de diseño, los comp
 - **Terminología Científica**: Utiliza expresiones como *"Qué solución tan elegante"*, *"Cierre de ciclo elegante"* o *"Arquitectura de código sumamente elegante"*.
 - **Porcentaje de Precisión**: Ocasionalmente, para denotar certeza o entusiasmo matemático por el éxito de una tarea, utiliza la frase *"al 10,000 millones por ciento"* (o *"al 10 mil millones por ciento"*), haciendo eco del entusiasmo científico característico del proyecto.
 
-
-
-
 ## Development Workflow & Planning (CRITICAL)
 - **Planning Mode**: Before executing complex changes, refactoring, or new features, the agent must create an `implementation_plan.md` in the task context or workspace and wait for the user's approval.
 - **Seguimiento del trabajo**: Usa el `TASKS.md` del proceso activo para la ejecución y `VALIDATION.md` para las comprobaciones. `ROADMAP.md` conserva los pendientes generales y el historial completado del producto.
@@ -68,12 +65,13 @@ The agent must keep documentation clean and updated according to the following g
 - **Flujo de cierre**: Un proceso validado y aprobado se mueve completo a `process/completed/YYYY/`. Un proceso cancelado, sustituido o cerrado incompleto se mueve a `process/archive/YYYY/` con el motivo registrado. No dejes copias duplicadas en `active`.
 
 ### 2. RELEASE_NOTES.md
+- **Uso Obligatorio del Script de Release (`build-release.ps1`) [CRÍTICO]**: Siempre que el usuario dé la orden *"Lanza la actualización"*, *"Lanza"* o solicite publicar una versión, el agente DEBE ejecutar obligatoriamente el script oficial de compilación y publicación (`.\scripts\build\build-release.ps1`). Este script se encarga de manera automatizada de las comprobaciones preflight, generación y firma de instaladores (MSI / EXE), actualización de manifiestos WinGet, generación de hashes SHA256, commit atómico con tag y creación del GitHub Release oficial con sus binarios.
 - **Protocolo de Verificación de Versión en GitHub ("Lanzar actualización") [CRÍTICO]**: Al recibir la indicación del usuario de *"Lanzar actualización"* o iniciar un proceso de publicación:
   1. El agente DEBE consultar obligatoriamente las versiones y tags publicados en GitHub / remoto (`gh release list` o `git ls-remote --tags`).
   2. Si la versión local (`versionName` / `versionCode`) coincide con una versión que ya ha sido publicada de forma remota en GitHub o `biglexj.com` (sin importar si fue subida hace minutos o días), es **OBLIGATORIO Y DE LEY** incrementar a la siguiente versión de parche (ej. de `1.1.3` a `1.1.4` e incrementar `versionCode`).
   3. **Prohibición de Sobrescritura**: NUNCA se debe sobrescribir, re-etiquetar (`git tag -f`) ni reemplazar una versión que ya ha sido publicada públicamente. Toda versión subida a la nube es inmutable y requiere avanzar de versión.
 - **Sanitización de Notas (CRÍTICO)**: Los mensajes de las notas de lanzamiento deben ser completamente limpios y profesionales. DEBEN eliminar cualquier referencia a rutas locales de archivos del entorno de desarrollo (ej. `d:\Proyectos\...`), nombres de variables o archivos de depuración internos, referencias a instrucciones del agente o volcados de consola técnicos. Deben estar redactados desde la perspectiva del usuario y del producto final.
-- **Extensión proporcional (CRÍTICO)**: La cantidad de párrafos debe responder al alcance real, no a una cuota fija: 1 para un hito pequeño, 2 cuando existen dos cambios relevantes, 3 como extensión habitual, 4 para hitos relativamente grandes y hasta 5 para lanzamientos de gran alcance. Cada párrafo debe agrupar un cambio principal y evitar listas detalladas de archivos.
+- **Extensión proporcional (CRÍTICO)**: La cantidad de párrafos debe responder al alcance real: 1 para un hito pequeño, 2 cuando existen dos cambios relevantes, 3 como extensión habitual, 4 para hitos relativamente grandes y hasta 5 para lanzamientos de gran alcance. Cada párrafo debe agrupar un cambio principal y evitar listas detalladas de archivos.
 - **No duplicar versiones**: Si una versión ya está registrada localmente pero aún no se ha hecho push a Git, añadir los nuevos cambios bajo la misma versión activa en lugar de crear una nueva versión de parche.
 - **Límite de Parches (Regla del .9)**: Nunca pasar de una versión de parche `.9` (por ejemplo, de `1.0.9` pasar a `1.1.0` en lugar de `1.0.10`).
 
