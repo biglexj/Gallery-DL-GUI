@@ -29,8 +29,7 @@ fun App(
     onSaveDirectoryStructure: (DirectoryStructure) -> Unit,
     onSaveHistory: (List<DownloadHistoryItem>) -> Unit,
     onOpenFolder: (String) -> Unit,
-    onOpenUrl: (String) -> Unit,
-    onOpenInPrisma: ((String) -> Unit)? = null
+    onOpenUrl: (String) -> Unit
 ) {
     GalleryDLTheme {
         Surface(modifier = Modifier.fillMaxSize()) {
@@ -51,8 +50,7 @@ fun App(
                 onSaveDirectoryStructure = onSaveDirectoryStructure,
                 onSaveHistory = onSaveHistory,
                 onOpenFolder = onOpenFolder,
-                onOpenUrl = onOpenUrl,
-                onOpenInPrisma = onOpenInPrisma
+                onOpenUrl = onOpenUrl
             )
         }
     }

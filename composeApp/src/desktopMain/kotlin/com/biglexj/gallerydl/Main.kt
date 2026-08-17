@@ -256,9 +256,6 @@ fun main(args: Array<String>) {
                         } catch (e: Exception) {
                             // Ignore
                         }
-                    },
-                    onOpenInPrisma = { mediaPath ->
-                        SynapseOutboundClient.openMediaInPrisma(mediaPath)
                     }
                 )
             }

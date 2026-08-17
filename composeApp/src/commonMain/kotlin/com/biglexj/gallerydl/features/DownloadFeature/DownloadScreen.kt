@@ -40,7 +40,6 @@ fun DownloadScreen(
     onSaveHistory: (List<DownloadHistoryItem>) -> Unit,
     onOpenFolder: (String) -> Unit,
     onOpenUrl: (String) -> Unit,
-    onOpenInPrisma: ((String) -> Unit)? = null,
     logoPainter: androidx.compose.ui.graphics.painter.Painter? = null,
     externalUrl: String? = null,
     externalCookiesFile: String? = null,
@@ -274,7 +273,6 @@ fun DownloadScreen(
                         },
                         onOpenFolder = onOpenFolder,
                         onOpenUrl = onOpenUrl,
-                        onOpenInPrisma = onOpenInPrisma,
                         listState = historyListState,
                         modifier = Modifier.fillMaxWidth().height(320.dp)
                     )
@@ -333,7 +331,6 @@ fun DownloadScreen(
                             },
                             onOpenFolder = onOpenFolder,
                             onOpenUrl = onOpenUrl,
-                            onOpenInPrisma = onOpenInPrisma,
                             listState = historyListState,
                             modifier = Modifier.fillMaxSize()
                         )
@@ -515,7 +512,6 @@ fun HistoryCard(
     onRemoveItem: (DownloadHistoryItem) -> Unit,
     onOpenFolder: (String) -> Unit,
     onOpenUrl: (String) -> Unit,
-    onOpenInPrisma: ((String) -> Unit)? = null,
     listState: LazyListState,
     modifier: Modifier = Modifier
 ) {
@@ -563,7 +559,7 @@ fun HistoryCard(
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     items(history) { item ->
-                        HistoryItemRow(item, onOpenFolder, onOpenUrl, onOpenInPrisma, onRemoveItem)
+                        HistoryItemRow(item, onOpenFolder, onOpenUrl, onRemoveItem)
                     }
                 }
             }
@@ -571,27 +567,29 @@ fun HistoryCard(
     }
 }
 
-fun resolveHistoryMediaPath(item: DownloadHistoryItem): String {
-    val firstFile = item.downloadedFiles.firstOrNull()
-    if (!firstFile.isNullOrBlank()) {
-        val f = java.io.File(firstFile)
-        if (f.exists()) return f.canonicalPath
-    }
-    if (!item.outputDirectory.isNullOrBlank()) {
-        val dir = java.io.File(item.outputDirectory)
-        if (dir.exists()) return dir.canonicalPath
-    }
-    return item.destination
-}
-
 @Composable
 fun HistoryItemRow(
     item: DownloadHistoryItem,
     onOpenFolder: (String) -> Unit,
     onOpenUrl: (String) -> Unit,
-    onOpenInPrisma: ((String) -> Unit)? = null,
     onRemoveItem: (DownloadHistoryItem) -> Unit
 ) {
+    fun openItemFolder() {
+        val firstFile = item.downloadedFiles.firstOrNull()
+        val actualFolder = if (!item.outputDirectory.isNullOrBlank()) {
+            item.outputDirectory
+        } else if (firstFile != null) {
+            try {
+                java.io.File(firstFile).canonicalFile.parent ?: item.destination
+            } catch (e: Exception) {
+                item.destination
+            }
+        } else {
+            item.destination
+        }
+        onOpenFolder(actualFolder)
+    }
+
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
@@ -618,14 +616,7 @@ fun HistoryItemRow(
                     modifier = Modifier
                         .size(56.dp)
                         .clip(RoundedCornerShape(12.dp))
-                        .clickable {
-                            val mediaPath = resolveHistoryMediaPath(item)
-                            if (onOpenInPrisma != null) {
-                                onOpenInPrisma(mediaPath)
-                            } else {
-                                onOpenFolder(item.outputDirectory ?: item.destination)
-                            }
-                        },
+                        .clickable { openItemFolder() },
                     contentScale = ContentScale.Crop
                 )
             } else {
@@ -633,14 +624,7 @@ fun HistoryItemRow(
                     modifier = Modifier
                         .size(56.dp)
                         .clip(RoundedCornerShape(12.dp))
-                        .clickable {
-                            val mediaPath = resolveHistoryMediaPath(item)
-                            if (onOpenInPrisma != null && item.status == "Exitoso") {
-                                onOpenInPrisma(mediaPath)
-                            } else {
-                                onOpenFolder(item.outputDirectory ?: item.destination)
-                            }
-                        },
+                        .clickable { openItemFolder() },
                     shape = RoundedCornerShape(12.dp),
                     color = MaterialTheme.colorScheme.surfaceVariant,
                     border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
@@ -690,25 +674,6 @@ fun HistoryItemRow(
                 horizontalArrangement = Arrangement.spacedBy(6.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Prisma button (Aurora Synapse Outbound)
-                if (onOpenInPrisma != null && item.status == "Exitoso") {
-                    Button(
-                        onClick = {
-                            val mediaPath = resolveHistoryMediaPath(item)
-                            onOpenInPrisma(mediaPath)
-                        },
-                        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 6.dp),
-                        modifier = Modifier.height(32.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.primaryContainer,
-                            contentColor = MaterialTheme.colorScheme.onPrimaryContainer
-                        ),
-                        shape = RoundedCornerShape(50)
-                    ) {
-                        Text("▶ Prisma", style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold)
-                    }
-                }
-
                 // Web button (Luna style)
                 Button(
                     onClick = { onOpenUrl(item.url) },
@@ -723,22 +688,9 @@ fun HistoryItemRow(
                     Text("🌐 Web", style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold)
                 }
 
+                // Open Folder button
                 Button(
-                    onClick = {
-                        val firstFile = item.downloadedFiles.firstOrNull()
-                        val actualFolder = if (!item.outputDirectory.isNullOrBlank()) {
-                            item.outputDirectory
-                        } else if (firstFile != null) {
-                            try {
-                                java.io.File(firstFile).canonicalFile.parent ?: item.destination
-                            } catch (e: Exception) {
-                                item.destination
-                            }
-                        } else {
-                            item.destination
-                        }
-                        onOpenFolder(actualFolder)
-                    },
+                    onClick = { openItemFolder() },
                     contentPadding = PaddingValues(horizontal = 10.dp, vertical = 6.dp),
                     modifier = Modifier.height(32.dp),
                     shape = RoundedCornerShape(50)
