@@ -17,6 +17,7 @@ import com.biglexj.gallerydl.platform.DirectoryChooser
 import com.biglexj.gallerydl.platform.InterceptionServer
 import com.biglexj.gallerydl.platform.ModernTrayManager
 import com.biglexj.gallerydl.platform.SingleInstanceLock
+import com.biglexj.gallerydl.platform.synapse.SynapseOutboundClient
 import java.io.File
 
 fun main(args: Array<String>) {
@@ -229,6 +230,9 @@ fun main(args: Array<String>) {
                         } catch (e: Exception) {
                             // Ignore
                         }
+                    },
+                    onOpenInPrisma = { mediaPath ->
+                        SynapseOutboundClient.openMediaInPrisma(mediaPath)
                     }
                 )
             }
