@@ -9,6 +9,18 @@ enum class TrayIconType { APP, SETTINGS, FOLDER, EXIT }
 
 object ModernTrayManager {
 
+    private var currentTrayIcon: TrayIcon? = null
+    private var currentDialog: JDialog? = null
+
+    fun removeTray() {
+        currentTrayIcon?.let { icon ->
+            runCatching { SystemTray.getSystemTray().remove(icon) }
+        }
+        currentTrayIcon = null
+        currentDialog?.dispose()
+        currentDialog = null
+    }
+
     private var cachedDarkMode: Boolean = false
     private var lastDarkModeCheck: Long = 0
 
@@ -18,7 +30,6 @@ object ModernTrayManager {
             return cachedDarkMode
         }
         lastDarkModeCheck = now
-        // Consulta no bloqueante en hilo secundario o retorno rápido de caché
         cachedDarkMode = runCatching {
             val proc = Runtime.getRuntime().exec(arrayOf("reg", "query",
                 "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize",
@@ -38,19 +49,20 @@ object ModernTrayManager {
         onQuitApp: () -> Unit,
     ): TrayIcon? {
         if (!SystemTray.isSupported()) return null
+        removeTray()
 
         val itemWidth = 160
         val itemHeight = 32
-        var popupDialog: JDialog? = null
 
         fun getOrCreatePopup(): JDialog {
-            popupDialog?.let { return it }
+            currentDialog?.let { return it }
 
             val dialog = JDialog()
             dialog.isUndecorated = true
             dialog.isAlwaysOnTop = true
             dialog.background = Color(0, 0, 0, 0)
             dialog.type = Window.Type.POPUP
+            currentDialog = dialog
 
             var justOpened = false
 
@@ -159,7 +171,7 @@ object ModernTrayManager {
 
             dialog.contentPane = mainPanel
             dialog.pack()
-            popupDialog = dialog
+            currentDialog = dialog
             return dialog
         }
 
@@ -186,7 +198,7 @@ object ModernTrayManager {
         trayIcon.addMouseListener(object : MouseAdapter() {
             override fun mouseClicked(e: MouseEvent) {
                 if (e.button == MouseEvent.BUTTON1) {
-                    popupDialog?.isVisible = false
+                    currentDialog?.isVisible = false
                     onOpenApp()
                 }
             }
@@ -202,6 +214,7 @@ object ModernTrayManager {
 
         runCatching {
             SystemTray.getSystemTray().add(trayIcon)
+            currentTrayIcon = trayIcon
         }
 
         return trayIcon

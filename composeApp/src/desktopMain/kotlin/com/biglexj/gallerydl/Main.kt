@@ -132,26 +132,43 @@ fun main(args: Array<String>) {
             awtImage?.let { BitmapPainter(it.toComposeImageBitmap()) }
         }
 
-        // Setup System Tray
-        remember(awtImage) {
-            val trayImg = awtImage ?: java.awt.image.BufferedImage(16, 16, java.awt.image.BufferedImage.TYPE_INT_ARGB)
-            ModernTrayManager.setupTray(
-                image = trayImg,
-                tooltip = "Gallery-DL GUI",
-                onOpenApp = { isVisible = true },
-                onOpenDownloadsFolder = {
-                    try {
-                        val file = File(defaultDest)
-                        if (file.exists()) java.awt.Desktop.getDesktop().open(file)
-                    } catch (_: Exception) {}
-                },
-                onQuitApp = {
-                    saveWindowState()
-                    SingleInstanceLock.release()
-                    InterceptionServer.stop()
-                    exitApplication()
+        // Setup System Tray asynchronously to prevent AWT rendering lifecycle lock
+        LaunchedEffect(awtImage) {
+            javax.swing.SwingUtilities.invokeLater {
+                val trayImg = awtImage ?: java.awt.image.BufferedImage(16, 16, java.awt.image.BufferedImage.TYPE_INT_ARGB).apply {
+                    val g = createGraphics()
+                    g.color = java.awt.Color(0x10, 0xB9, 0x81)
+                    g.fillOval(2, 2, 12, 12)
+                    g.dispose()
                 }
-            )
+                ModernTrayManager.setupTray(
+                    image = trayImg,
+                    tooltip = "Gallery-DL GUI",
+                    onOpenApp = {
+                        isVisible = true
+                        windowState.isMinimized = false
+                    },
+                    onOpenDownloadsFolder = {
+                        try {
+                            val file = File(defaultDest)
+                            if (file.exists()) java.awt.Desktop.getDesktop().open(file)
+                        } catch (_: Exception) {}
+                    },
+                    onQuitApp = {
+                        saveWindowState()
+                        SingleInstanceLock.release()
+                        InterceptionServer.stop()
+                        ModernTrayManager.removeTray()
+                        exitApplication()
+                    }
+                )
+            }
+        }
+
+        DisposableEffect(Unit) {
+            onDispose {
+                ModernTrayManager.removeTray()
+            }
         }
 
         Window(
@@ -162,14 +179,23 @@ fun main(args: Array<String>) {
                 } else {
                     SingleInstanceLock.release()
                     InterceptionServer.stop()
+                    ModernTrayManager.removeTray()
                     exitApplication()
                 }
             },
-            title = "Gallery-DL GUI",
+            title = if (SingleInstanceLock.isDevMode()) "Gallery-DL GUI [Dev]" else "Gallery-DL GUI",
             state = windowState,
             icon = logoPainter,
             visible = isVisible,
         ) {
+            LaunchedEffect(Unit) {
+                java.awt.EventQueue.invokeLater {
+                    window.isMinimized = false
+                    window.toFront()
+                    window.requestFocus()
+                }
+            }
+
             androidx.compose.runtime.CompositionLocalProvider(
                 androidx.compose.foundation.LocalContextMenuRepresentation provides androidx.compose.foundation.DarkDefaultContextMenuRepresentation
             ) {
