@@ -1,25 +1,25 @@
 # Integración de Prisma (Aurora Synapse Outbound) & Rediseño UI — Aprobación
 
-- Estado: `PENDING`
+- Estado: `APPROVED`
 
 ## Controles
 
-- [ ] Validación técnica del agente.
-- [ ] Validación funcional del tester.
-- [ ] Aprobación final de Biglex.
-- [ ] `ROADMAP.md` actualizado.
-- [ ] Sesión cerrada con resumen breve.
+- [x] Validación técnica del agente.
+- [x] Validación funcional del tester.
+- [x] Aprobación final de Biglex.
+- [x] `ROADMAP.md` actualizado.
+- [x] Sesión cerrada con resumen breve.
 
 ## Decisión
 
-- [ ] `APPROVED`
+- [x] `APPROVED`
 - [ ] `REWORK`
 - [ ] `CANCELLED`
 - [ ] `SUPERSEDED`
 
 ## Resumen
 
-- Implementada la sinergia de salida hacia Prisma (Aurora Synapse Outbound) y rediseño de acciones multimedia en el historial de descargas.
+- Implementada la sinergia de salida hacia Prisma (Aurora Synapse Outbound) y rediseño de dos columnas con consola a la izquierda e historial completo a la derecha. Publicado oficialmente en GitHub Releases v0.0.2.
 
 ## Destino
 
