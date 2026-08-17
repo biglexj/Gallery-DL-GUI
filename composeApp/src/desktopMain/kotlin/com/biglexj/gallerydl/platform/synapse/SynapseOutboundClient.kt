@@ -1,13 +1,9 @@
 package com.biglexj.gallerydl.platform.synapse
 
-import com.biglexj.gallerydl.features.synapse.SynapseEnvelope
-import kotlinx.serialization.json.buildJsonObject
-import kotlinx.serialization.json.put
 import java.awt.Desktop
 import java.io.File
 import java.net.InetAddress
 import java.net.Socket
-import java.net.URI
 import java.net.URLEncoder
 
 /**
@@ -16,13 +12,15 @@ import java.net.URLEncoder
  */
 object SynapseOutboundClient {
 
-    const val PRISMA_PORT = 49280
+    // Puertos oficiales de Prisma Synapse en el ecosistema (Servidor HTTP/IPC 49288 y puerto de respaldo 49280)
+    private val PRISMA_PORTS = listOf(49288, 49280)
 
     /**
      * Abre y reproduce/visualiza el medio o directorio descargado en Prisma.
-     * 1. Intenta contactar la instancia activa de Prisma vía IPC localhost:49280.
-     * 2. Si no responde por socket, despacha el esquema URI nativo `prisma://open?path=...&autoplay=true`.
-     * 3. Como respaldo si Prisma no está presente, abre el archivo o carpeta con el visor/reproductor del sistema.
+     * 1. Intenta contactar la instancia activa de Prisma vía IPC localhost en puertos 49288 / 49280.
+     *    Prisma procesa directamente peticiones URI: `prisma://open?path=...&autoplay=true\n`
+     * 2. Como respaldo directo si Prisma no está presente, abre el archivo con el reproductor/visor
+     *    predeterminado configurado en el sistema operativo (Windows, Linux, macOS) SIN abrir el navegador web.
      */
     fun openMediaInPrisma(
         targetPath: String,
@@ -32,49 +30,29 @@ object SynapseOutboundClient {
         val file = File(targetPath)
         if (!file.exists()) return false
         val canonicalPath = file.canonicalPath
+        val encodedPath = URLEncoder.encode(canonicalPath, "UTF-8").replace("+", "%20")
+        val prismaUriString = "prisma://open?path=$encodedPath&autoplay=$autoPlay\n"
 
-        // 1. Enviar payload estructurado por socket IPC si Prisma ya está corriendo
-        val envelope = SynapseEnvelope(
-            synapseVersion = "1.0",
-            sourceApp = "gallerydl",
-            targetApp = "prisma",
-            action = "open_media",
-            timestampUtc = java.time.Instant.now().toString(),
-            payload = buildJsonObject {
-                put("file_path", canonicalPath)
-                put("media_category", mediaCategory)
-                put("auto_play", autoPlay)
-            }
-        )
-        val jsonPayload = SynapseEnvelope.toJson(envelope)
+        // 1. Intentar contactar la instancia viva de Prisma por socket IPC directo
+        for (port in PRISMA_PORTS) {
+            val success = runCatching {
+                Socket(InetAddress.getByName("127.0.0.1"), port).use { socket ->
+                    socket.soTimeout = 1500
+                    val writer = socket.getOutputStream().bufferedWriter(Charsets.UTF_8)
+                    writer.write(prismaUriString)
+                    writer.flush()
 
-        val ipcSuccess = runCatching {
-            Socket(InetAddress.getByName("127.0.0.1"), PRISMA_PORT).use { socket ->
-                socket.soTimeout = 1500
-                val writer = socket.getOutputStream().bufferedWriter()
-                writer.write(jsonPayload + "\n")
-                writer.flush()
-                true
-            }
-        }.getOrDefault(false)
+                    // Leer confirmación de Prisma (responde "OK\r\n")
+                    val reader = socket.getInputStream().bufferedReader(Charsets.UTF_8)
+                    val response = reader.readLine()
+                    response != null && (response.contains("OK", ignoreCase = true) || response.contains("200") || response.contains("success", ignoreCase = true))
+                }
+            }.getOrDefault(false)
 
-        if (ipcSuccess) return true
+            if (success) return true
+        }
 
-        // 2. Intentar deep link URI ante el sistema operativo
-        val uriSuccess = runCatching {
-            if (Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Desktop.Action.BROWSE)) {
-                val encodedPath = URLEncoder.encode(canonicalPath, "UTF-8").replace("+", "%20")
-                val uri = URI("prisma://open?path=$encodedPath&autoplay=$autoPlay")
-                Desktop.getDesktop().browse(uri)
-                true
-            } else {
-                false
-            }
-        }.getOrDefault(false)
-
-        if (uriSuccess) return true
-
-        // 3. Respaldo directo: abrir con la aplicación predeterminada del sistema
+        // 2. Fallback Infalible: Abrir directamente con el visor/reproductor nativo del SO (CERO NAVEGADOR)
         return runCatching {
             if (Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Desktop.Action.OPEN)) {
                 Desktop.getDesktop().open(file)
