@@ -4,6 +4,10 @@ Interfaz gráfica de escritorio para Windows construida con Kotlin y Compose Mul
 
 Versión actual: `0.0.1`
 
+## 📸 Capturas de Pantalla
+
+![Pantalla principal](screenshots/home.png)
+
 ## Estado del proyecto
 
 Esta es una versión inicial. La compatibilidad real depende de los extractores y restricciones de cada sitio en `gallery-dl`. La aplicación no importa sesiones de navegador ni archivos de autenticación; únicamente utiliza el acceso público disponible para cada extractor.
