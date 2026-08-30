@@ -73,7 +73,7 @@ The agent must keep documentation clean and updated according to the following g
 - **Sanitización de Notas (CRÍTICO)**: Los mensajes de las notas de lanzamiento deben ser completamente limpios y profesionales. DEBEN eliminar cualquier referencia a rutas locales de archivos del entorno de desarrollo (ej. `d:\Proyectos\...`), nombres de variables o archivos de depuración internos, referencias a instrucciones del agente o volcados de consola técnicos. Deben estar redactados desde la perspectiva del usuario y del producto final.
 - **Extensión proporcional (CRÍTICO)**: La cantidad de párrafos debe responder al alcance real: 1 para un hito pequeño, 2 cuando existen dos cambios relevantes, 3 como extensión habitual, 4 para hitos relativamente grandes y hasta 5 para lanzamientos de gran alcance. Cada párrafo debe agrupar un cambio principal y evitar listas detalladas de archivos.
 - **No duplicar versiones**: Si una versión ya está registrada localmente pero aún no se ha hecho push a Git, añadir los nuevos cambios bajo la misma versión activa en lugar de crear una nueva versión de parche.
-- **Límite de Parches (Regla del .9)**: Nunca pasar de una versión de parche `.9` (por ejemplo, de `1.0.9` pasar a `1.1.0` en lugar de `1.0.10`).
+- **SemVer Flexible (Core-Docs v1.7.0)**: SemVer estándar sin límite artificial por dígito (segmentos mayores a 9 como `0.0.12` son 100% válidos). Avanzar `PATCH`, `MINOR` o `MAJOR` según el alcance real del cambio y compatibilidad.
 
 ### 3. RELEASE_MESSAGE.md
 - Usar un formato conciso, limpio y con emojis para anunciar el lanzamiento a usuarios o canales de chat.

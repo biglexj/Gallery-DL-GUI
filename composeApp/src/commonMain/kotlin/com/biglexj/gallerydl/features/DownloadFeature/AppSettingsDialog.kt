@@ -22,7 +22,7 @@ fun AppSettingsDialog(
     onSetMinimizeToTray: (Boolean) -> Unit,
     onOpenCookiesFolder: () -> Unit,
     onOpenUrl: (String) -> Unit,
-    appVersion: String = "0.0.2",
+    appVersion: String = "1.0.0",
     onDismiss: () -> Unit
 ) {
     var extensionEnabled by remember { mutableStateOf(true) }

@@ -67,14 +67,18 @@ object InterceptionServer {
         Thread {
             try {
                 val port = serverPort
-                val s = HttpServer.create(InetSocketAddress("127.0.0.1", port), 50)
+                val s = try {
+                    HttpServer.create(InetSocketAddress("0.0.0.0", port), 50)
+                } catch (e: Exception) {
+                    HttpServer.create(InetSocketAddress("127.0.0.1", port), 50)
+                }
                 s.executor = Executors.newCachedThreadPool()
 
-                // ── /status: Verificación de salud y conectividad de la extensión ──────
+                // ── /status: Verificación de salud y conectividad de la extensión / Synapse ──────
                 s.createContext("/status") { exchange ->
                     try {
                         if (handleCors(exchange)) return@createContext
-                        val response = "{\"status\":\"online\",\"version\":\"0.0.2\"}"
+                        val response = "{\"status\":\"online\",\"version\":\"1.0.0\",\"protocol\":\"aurora-synapse\",\"app\":\"GalleryDL-GUI\"}"
                         val bytes = response.toByteArray(Charsets.UTF_8)
                         exchange.responseHeaders.set("Content-Type", "application/json")
                         exchange.sendResponseHeaders(200, bytes.size.toLong())
@@ -86,31 +90,65 @@ object InterceptionServer {
                     }
                 }
 
-                // ── /download: Encolar URL de galería completa ─────────────────────────
-                s.createContext("/download") { exchange ->
+                // ── /synapse: Endpoint oficial Aurora Synapse Protocol (Local & Móvil LAN) ──────
+                s.createContext("/synapse") { exchange ->
                     try {
                         if (handleCors(exchange)) return@createContext
-                        if (!exchange.requestMethod.equals("POST", ignoreCase = true)) {
-                            exchange.sendResponseHeaders(405, 0)
-                            return@createContext
+                        val method = exchange.requestMethod.uppercase()
+                        val action: com.biglexj.gallerydl.platform.synapse.SynapseAction? = when (method) {
+                            "POST" -> {
+                                val body = exchange.requestBody.bufferedReader(Charsets.UTF_8).readText()
+                                com.biglexj.gallerydl.platform.synapse.SynapseUriParser.parse(body)
+                            }
+                            "GET" -> {
+                                val query = exchange.requestURI.rawQuery
+                                com.biglexj.gallerydl.platform.synapse.SynapseUriParser.parse("gallerydl://download?$query")
+                            }
+                            else -> null
                         }
 
-                        val body = exchange.requestBody.bufferedReader(Charsets.UTF_8).readText()
-                        val urlPattern = """\"url\"\s*:\s*\"([^\"]+)\"""".toRegex()
-                        val match = urlPattern.find(body)
-                        val url = match?.groupValues?.get(1)
-
-                        if (url != null) {
-                            CoroutineScope(Dispatchers.Main).launch {
-                                urlListener?.invoke(url)
+                        if (action != null) {
+                            when (action) {
+                                is com.biglexj.gallerydl.platform.synapse.SynapseAction.Download -> {
+                                    CoroutineScope(Dispatchers.Main).launch {
+                                        urlListener?.invoke(action.url)
+                                    }
+                                    val response = "{\"status\":\"ok\",\"action\":\"download\",\"url\":\"${action.url}\"}"
+                                    val bytes = response.toByteArray(Charsets.UTF_8)
+                                    exchange.responseHeaders.set("Content-Type", "application/json")
+                                    exchange.sendResponseHeaders(200, bytes.size.toLong())
+                                    exchange.responseBody.use { it.write(bytes) }
+                                }
+                                is com.biglexj.gallerydl.platform.synapse.SynapseAction.Enqueue -> {
+                                    CoroutineScope(Dispatchers.Main).launch {
+                                        urlListener?.invoke(action.url)
+                                    }
+                                    val response = "{\"status\":\"ok\",\"action\":\"enqueue\",\"url\":\"${action.url}\"}"
+                                    val bytes = response.toByteArray(Charsets.UTF_8)
+                                    exchange.responseHeaders.set("Content-Type", "application/json")
+                                    exchange.sendResponseHeaders(200, bytes.size.toLong())
+                                    exchange.responseBody.use { it.write(bytes) }
+                                }
+                                is com.biglexj.gallerydl.platform.synapse.SynapseAction.Focus -> {
+                                    CoroutineScope(Dispatchers.Main).launch {
+                                        urlListener?.invoke("")
+                                    }
+                                    val response = "{\"status\":\"ok\",\"action\":\"focus\"}"
+                                    val bytes = response.toByteArray(Charsets.UTF_8)
+                                    exchange.responseHeaders.set("Content-Type", "application/json")
+                                    exchange.sendResponseHeaders(200, bytes.size.toLong())
+                                    exchange.responseBody.use { it.write(bytes) }
+                                }
+                                is com.biglexj.gallerydl.platform.synapse.SynapseAction.OpenFolder -> {
+                                    val response = "{\"status\":\"ok\",\"action\":\"open_folder\"}"
+                                    val bytes = response.toByteArray(Charsets.UTF_8)
+                                    exchange.responseHeaders.set("Content-Type", "application/json")
+                                    exchange.sendResponseHeaders(200, bytes.size.toLong())
+                                    exchange.responseBody.use { it.write(bytes) }
+                                }
                             }
-                            val response = "{\"status\":\"queued\",\"url\":\"$url\"}"
-                            val bytes = response.toByteArray(Charsets.UTF_8)
-                            exchange.responseHeaders.set("Content-Type", "application/json")
-                            exchange.sendResponseHeaders(200, bytes.size.toLong())
-                            exchange.responseBody.use { it.write(bytes) }
                         } else {
-                            val err = "{\"error\":\"Missing url parameter\"}"
+                            val err = "{\"error\":\"Invalid Synapse action or missing url parameter\"}"
                             val bytes = err.toByteArray(Charsets.UTF_8)
                             exchange.responseHeaders.set("Content-Type", "application/json")
                             exchange.sendResponseHeaders(400, bytes.size.toLong())
@@ -122,6 +160,46 @@ object InterceptionServer {
                         exchange.close()
                     }
                 }
+
+                // ── /download & /enqueue: Encolar URL de galería completa ─────────────────────────
+                val downloadHandler: (HttpExchange) -> Unit = { exchange ->
+                    try {
+                        if (!handleCors(exchange)) {
+                            if (!exchange.requestMethod.equals("POST", ignoreCase = true)) {
+                                exchange.sendResponseHeaders(405, 0)
+                            } else {
+                                val body = exchange.requestBody.bufferedReader(Charsets.UTF_8).readText()
+                                val urlPattern = """\"url\"\s*:\s*\"([^\"]+)\"""".toRegex()
+                                val match = urlPattern.find(body)
+                                val url = match?.groupValues?.get(1)
+
+                                if (url != null) {
+                                    CoroutineScope(Dispatchers.Main).launch {
+                                        urlListener?.invoke(url)
+                                    }
+                                    val response = "{\"status\":\"queued\",\"url\":\"$url\"}"
+                                    val bytes = response.toByteArray(Charsets.UTF_8)
+                                    exchange.responseHeaders.set("Content-Type", "application/json")
+                                    exchange.sendResponseHeaders(200, bytes.size.toLong())
+                                    exchange.responseBody.use { it.write(bytes) }
+                                } else {
+                                    val err = "{\"error\":\"Missing url parameter\"}"
+                                    val bytes = err.toByteArray(Charsets.UTF_8)
+                                    exchange.responseHeaders.set("Content-Type", "application/json")
+                                    exchange.sendResponseHeaders(400, bytes.size.toLong())
+                                    exchange.responseBody.use { it.write(bytes) }
+                                }
+                            }
+                        }
+                    } catch (e: Exception) {
+                        exchange.sendResponseHeaders(500, 0)
+                    } finally {
+                        exchange.close()
+                    }
+                }
+
+                s.createContext("/download") { downloadHandler(it) }
+                s.createContext("/enqueue") { downloadHandler(it) }
 
                 // ── /cookies: Sincronización de cookies Netscape ───────────────────────
                 s.createContext("/cookies") { exchange ->

@@ -53,11 +53,23 @@ private val AppShapes = Shapes(
     extraLarge = androidx.compose.foundation.shape.RoundedCornerShape(28.dp),
 )
 
+enum class ThemeMode {
+    System,
+    Light,
+    Dark
+}
+
 @Composable
 fun GalleryDLTheme(
-    useDarkTheme: Boolean = isSystemInDarkTheme(),
+    mode: ThemeMode = ThemeMode.System,
     content: @Composable () -> Unit
 ) {
+    val systemInDark = isSystemInDarkTheme()
+    val useDarkTheme = when (mode) {
+        ThemeMode.System -> systemInDark
+        ThemeMode.Light -> false
+        ThemeMode.Dark -> true
+    }
     val colors = if (useDarkTheme) DarkColors else LightColors
     MaterialTheme(
         colorScheme = colors,

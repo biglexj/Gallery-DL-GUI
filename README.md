@@ -2,11 +2,15 @@
 
 Interfaz gráfica de escritorio para Windows construida con Kotlin y Compose Multiplatform. Facilita el uso del motor `gallery-dl` mediante una pantalla visual para iniciar descargas públicas, elegir la carpeta de destino, controlar la estructura de directorios y consultar el historial local.
 
-Versión actual: `0.0.1`
+Versión actual: `1.0.0`
 
 ## 📸 Capturas de Pantalla
 
-![Pantalla principal](screenshots/home.png)
+![Pantalla principal](docs/screenshots/home.png)
+
+## Organización de recursos
+
+El icono canónico transparente se conserva en [`assets/branding/icons/icon-transparent.png`](assets/branding/icons/icon-transparent.png) y el icono con fondo de marca en [`assets/branding/icons/icon.png`](assets/branding/icons/icon.png). Los recursos de Compose y de la extensión son derivados para sus consumidores oficiales y deben seguir el [Asset Organization Standard](../Core-Docs/global/architecture/asset-organization-standard.md).
 
 ## Estado del proyecto
 

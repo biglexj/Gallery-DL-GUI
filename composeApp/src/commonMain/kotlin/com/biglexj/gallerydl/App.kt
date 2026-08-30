@@ -23,15 +23,17 @@ fun App(
     externalHistoryItem: DownloadHistoryItem? = null,
     autoStart: Boolean = false,
     minimizeToTray: Boolean = true,
+    themeMode: com.biglexj.gallerydl.theme.ThemeMode = com.biglexj.gallerydl.theme.ThemeMode.System,
     onSetAutoStart: (Boolean) -> Unit = {},
     onSetMinimizeToTray: (Boolean) -> Unit = {},
+    onThemeModeSelected: (com.biglexj.gallerydl.theme.ThemeMode) -> Unit = {},
     onChooseDirectory: suspend (String) -> String?,
     onSaveDirectoryStructure: (DirectoryStructure) -> Unit,
     onSaveHistory: (List<DownloadHistoryItem>) -> Unit,
     onOpenFolder: (String) -> Unit,
     onOpenUrl: (String) -> Unit
 ) {
-    GalleryDLTheme {
+    GalleryDLTheme(mode = themeMode) {
         Surface(modifier = Modifier.fillMaxSize()) {
             DownloadScreen(
                 downloadService = downloadService,
@@ -44,8 +46,10 @@ fun App(
                 externalHistoryItem = externalHistoryItem,
                 autoStart = autoStart,
                 minimizeToTray = minimizeToTray,
+                themeMode = themeMode,
                 onSetAutoStart = onSetAutoStart,
                 onSetMinimizeToTray = onSetMinimizeToTray,
+                onThemeModeSelected = onThemeModeSelected,
                 onChooseDirectory = onChooseDirectory,
                 onSaveDirectoryStructure = onSaveDirectoryStructure,
                 onSaveHistory = onSaveHistory,

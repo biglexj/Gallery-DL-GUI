@@ -1,8 +1,31 @@
-# Notas de lanzamiento de Gallery-DL-GUI
+# 🚀 Gallery-DL-GUI — Historial de Versiones
 
-## [0.0.2] - 2026-08-15
+📌 **Versión actual: `1.0.0` · Versión mínima requerida: `0.0.1`**
 
-Incorporación de la extensión de navegador oficial (Gallery-DL GUI Connector) para Google Chrome y navegadores Chromium, permitiendo enviar galerías completas a la aplicación de escritorio y sincronizar cookies de sesión activa con un solo clic sin configuraciones manuales.
+> [!IMPORTANT]
+> **Estándar SemVer Flexible (Core-Docs v1.7.0):**
+> - Se utiliza SemVer estándar (`MAJOR.MINOR.PATCH`) sin límites artificiales por dígito (segmentos mayores a 9 como `0.0.12` son 100% válidos).
+> - Se incrementa `PATCH`, `MINOR` o `MAJOR` según el alcance real del cambio y compatibilidad, sin saltos forzados de versión basados únicamente en alcanzar un dígito 9.
+
+> Las versiones se muestran en orden descendente: la más reciente aparece arriba y la más antigua abajo.
+
+---
+
+## [1.0.0] - 2026-08-30
+
+Primera versión mayor oficial de Gallery-DL GUI, que introduce una renovación integral de identidad visual mediante un icono maestro canónico con canal alfa transparente y empaquetado nativo `.ico` con 10 capas de resolución adaptativa para todas las superficies del sistema operativo Windows.
+
+Nuevo selector de tema tri-estado canónico con renderizado Canvas vectorial nativo en cabecera, permitiendo alternar de forma fluida entre Modo Sistema, Modo Claro y Modo Oscuro, con persistencia automática de preferencias entre sesiones.
+
+Nuevo sistema de nomenclatura limpia para las descargas, el cual extrae automáticamente el título real de cada ilustración como prefijo principal del archivo y reubica el identificador cronológico al final, eliminando prefijos redundantes y garantizando un orden ascendente impecable al visualizar carpetas en el explorador.
+
+Integración completa con el Aurora Synapse Protocol (`gallerydl://` y `aurora-synapse://gallerydl/`), incorporando registro nativo en Windows (HKCU), endpoint `/synapse` y recepción remota LAN para encolar descargas compartidas desde dispositivos móviles (Lienzo Gallery / Android Share Target).
+
+Garantía estricta de instancia única (Single-Instance Lock) con despacho en caliente y soporte de bandeja del sistema (System Tray), complementado con la distribución en un único instalador ejecutable (`.exe`) firmado digitalmente con Authenticode y extensión de navegador Manifest V3 optimizada.
+
+---
+
+## [0.0.2] - 2026-08-17
 
 Nuevo motor de intercepción inteligente para descarga de ilustraciones de máxima resolución, el cual captura de manera transparente los enlaces de entrega autenticados desde el navegador, resolviendo de forma definitiva el acceso a obras con restricción de edad y galerías protegidas.
 

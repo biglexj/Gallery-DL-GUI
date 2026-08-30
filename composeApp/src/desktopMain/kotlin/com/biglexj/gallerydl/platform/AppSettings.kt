@@ -93,6 +93,10 @@ class AppSettings(
         get() = prefs.get("default_browser_cookies", null)
         set(value) = if (value != null) prefs.put("default_browser_cookies", value) else prefs.remove("default_browser_cookies")
 
+    var themeMode: String
+        get() = prefs.get("theme_mode", "System")
+        set(value) = prefs.put("theme_mode", value)
+
     fun loadHistory(): List<DownloadHistoryItem> {
         loadHistoryFile()?.let { return it }
 

@@ -17,14 +17,21 @@ import com.biglexj.gallerydl.platform.DirectoryChooser
 import com.biglexj.gallerydl.platform.InterceptionServer
 import com.biglexj.gallerydl.platform.ModernTrayManager
 import com.biglexj.gallerydl.platform.SingleInstanceLock
+import com.biglexj.gallerydl.platform.synapse.SynapseAction
 import com.biglexj.gallerydl.platform.synapse.SynapseOutboundClient
+import com.biglexj.gallerydl.platform.synapse.SynapseUriParser
+import com.biglexj.gallerydl.platform.synapse.WindowsProtocolRegistrar
+import com.biglexj.gallerydl.theme.ThemeMode
 import java.io.File
 
 fun main(args: Array<String>) {
-    // ── Single Instance Lock Guarantee (desktop_app_standards.md) ───────────
-    if (!SingleInstanceLock.acquireOrBringToFront()) {
+    // ── Single Instance Lock & Aurora Synapse Dispatch Guarantee ───────────
+    if (!SingleInstanceLock.acquireOrTransfer(args)) {
         kotlin.system.exitProcess(0)
     }
+
+    // Registrar protocolo gallerydl:// en Windows
+    WindowsProtocolRegistrar.registerProtocolIfWindows()
 
     val isAutostart = args.contains("--autostart")
 
@@ -84,20 +91,52 @@ fun main(args: Array<String>) {
         }
         val initialHistory = remember { appSettings.loadHistory() }
 
-        // Browser extension interception server & CLI args state
-        val cliUrl = args.firstOrNull { it.startsWith("http://", ignoreCase = true) || it.startsWith("https://", ignoreCase = true) }
+        // Browser extension interception server & CLI/Synapse args state
+        val initialSynapseAction = args.firstNotNullOfOrNull { SynapseUriParser.parse(it) }
+        val cliUrl = when (initialSynapseAction) {
+            is SynapseAction.Download -> initialSynapseAction.url
+            is SynapseAction.Enqueue -> initialSynapseAction.url
+            else -> args.firstOrNull { it.startsWith("http://", ignoreCase = true) || it.startsWith("https://", ignoreCase = true) }
+        }
         var externalUrl by remember { mutableStateOf<String?>(cliUrl) }
         var externalCookiesFile by remember { mutableStateOf<String?>(null) }
         var externalHistoryItem by remember { mutableStateOf<DownloadHistoryItem?>(null) }
 
         var autoStartState by remember { mutableStateOf(appSettings.autoStart) }
         var minimizeToTrayState by remember { mutableStateOf(appSettings.minimizeToTray) }
+        var themeModeState by remember {
+            val saved = appSettings.themeMode
+            mutableStateOf(ThemeMode.values().firstOrNull { it.name.equals(saved, ignoreCase = true) } ?: ThemeMode.System)
+        }
+        var focusTrigger by remember { mutableStateOf(0) }
 
-        // Listen for focus requests from duplicate launches to unminimize/bring app window to front
+        // Listen for Synapse actions and focus requests from duplicate launches
         remember {
-            SingleInstanceLock.listenForFocusRequests {
-                if (windowState.isMinimized) windowState.isMinimized = false
-                isVisible = true
+            com.biglexj.gallerydl.platform.SingleInstanceLock.listenForRequests { action ->
+                when (action) {
+                    is SynapseAction.Focus -> {
+                        if (windowState.isMinimized) windowState.isMinimized = false
+                        isVisible = true
+                        focusTrigger++
+                    }
+                    is SynapseAction.Download -> {
+                        externalUrl = action.url
+                        if (windowState.isMinimized) windowState.isMinimized = false
+                        isVisible = true
+                        focusTrigger++
+                    }
+                    is SynapseAction.Enqueue -> {
+                        externalUrl = action.url
+                        if (windowState.isMinimized) windowState.isMinimized = false
+                        isVisible = true
+                        focusTrigger++
+                    }
+                    is SynapseAction.OpenFolder -> {
+                        if (windowState.isMinimized) windowState.isMinimized = false
+                        isVisible = true
+                        focusTrigger++
+                    }
+                }
             }
         }
 
@@ -106,6 +145,7 @@ fun main(args: Array<String>) {
                 externalUrl = url
                 if (windowState.isMinimized) windowState.isMinimized = false
                 isVisible = true
+                focusTrigger++
             }
             InterceptionServer.registerCookiesListener { cookiesPath ->
                 externalCookiesFile = cookiesPath
@@ -121,7 +161,7 @@ fun main(args: Array<String>) {
             try {
                 val stream = Thread.currentThread().contextClassLoader.getResourceAsStream("Icon.png")
                     ?: ClassLoader.getSystemResourceAsStream("Icon.png")
-                    ?: File("icon/Icon.png").takeIf { it.exists() }?.inputStream()
+                    ?: File("assets/branding/icons/icon-transparent.png").takeIf { it.exists() }?.inputStream()
                 stream?.use { javax.imageio.ImageIO.read(it) }
             } catch (e: Exception) {
                 null
@@ -188,7 +228,7 @@ fun main(args: Array<String>) {
             icon = logoPainter,
             visible = isVisible,
         ) {
-            LaunchedEffect(Unit) {
+            LaunchedEffect(focusTrigger) {
                 java.awt.EventQueue.invokeLater {
                     window.isMinimized = false
                     window.toFront()
@@ -210,6 +250,7 @@ fun main(args: Array<String>) {
                     externalHistoryItem = externalHistoryItem,
                     autoStart = autoStartState,
                     minimizeToTray = minimizeToTrayState,
+                    themeMode = themeModeState,
                     onSetAutoStart = { enabled ->
                         autoStartState = enabled
                         appSettings.autoStart = enabled
@@ -217,6 +258,10 @@ fun main(args: Array<String>) {
                     onSetMinimizeToTray = { enabled ->
                         minimizeToTrayState = enabled
                         appSettings.minimizeToTray = enabled
+                    },
+                    onThemeModeSelected = { mode ->
+                        themeModeState = mode
+                        appSettings.themeMode = mode.name
                     },
                     onChooseDirectory = { current ->
                         DirectoryChooser.chooseDirectory(current)?.also { selected ->

@@ -23,6 +23,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.biglexj.gallerydl.shared.components.ThemeModeButton
+import com.biglexj.gallerydl.theme.ThemeMode
 import com.biglexj.gallerydl.utils.formatTimestamp
 import com.biglexj.gallerydl.utils.getCurrentTimeMillis
 import com.biglexj.gallerydl.utils.loadLocalImage
@@ -46,8 +48,10 @@ fun DownloadScreen(
     externalHistoryItem: DownloadHistoryItem? = null,
     autoStart: Boolean = false,
     minimizeToTray: Boolean = true,
+    themeMode: com.biglexj.gallerydl.theme.ThemeMode = com.biglexj.gallerydl.theme.ThemeMode.System,
     onSetAutoStart: (Boolean) -> Unit = {},
     onSetMinimizeToTray: (Boolean) -> Unit = {},
+    onThemeModeSelected: (com.biglexj.gallerydl.theme.ThemeMode) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     var url by remember { mutableStateOf("") }
@@ -188,10 +192,8 @@ fun DownloadScreen(
                         Image(
                             painter = painter,
                             contentDescription = "App Logo",
-                            contentScale = ContentScale.Crop,
-                            modifier = Modifier
-                                .size(64.dp)
-                                .clip(RoundedCornerShape(16.dp))
+                            contentScale = ContentScale.Fit,
+                            modifier = Modifier.size(64.dp)
                         )
                     }
                     Column {
@@ -209,11 +211,20 @@ fun DownloadScreen(
                     }
                 }
 
-                OutlinedButton(
-                    onClick = { showSettingsDialog = true },
-                    shape = RoundedCornerShape(10.dp)
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text("⚙️ Ajustes")
+                    ThemeModeButton(
+                        currentMode = themeMode,
+                        onModeSelected = onThemeModeSelected
+                    )
+                    OutlinedButton(
+                        onClick = { showSettingsDialog = true },
+                        shape = RoundedCornerShape(10.dp)
+                    ) {
+                        Text("⚙️ Ajustes")
+                    }
                 }
             }
 

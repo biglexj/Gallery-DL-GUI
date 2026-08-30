@@ -38,9 +38,12 @@ internal fun buildGalleryDlConfig(
         directorySegments.orEmpty().forEach { add(JsonPrimitive(it)) }
     }
 
+    val defaultFilenamePattern = "{title|filename|id}{num:?_//}_{id|index}.{extension}"
+
     val extractorConfig = buildJsonObject {
         put("base-directory", JsonPrimitive(destination.replace('\\', '/')))
         directorySegments?.let { put("directory", directoryJson()) }
+        put("filename", JsonPrimitive(defaultFilenamePattern))
 
         if (extractorKey.isNotBlank()) {
             val syncedCookiesFile = File("D:\\Documentos\\cookies\\synced_cookies.txt")
@@ -48,6 +51,7 @@ internal fun buildGalleryDlConfig(
 
             put(extractorKey, buildJsonObject {
                 directorySegments?.let { put("directory", directoryJson()) }
+                put("filename", JsonPrimitive(defaultFilenamePattern))
 
                 if (cookiesPath != null) {
                     put("cookies", JsonPrimitive(cookiesPath))
