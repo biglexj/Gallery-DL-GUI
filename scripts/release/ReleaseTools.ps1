@@ -60,10 +60,7 @@ function Assert-SemanticVersion {
     param([Parameter(Mandatory)] [string]$Version)
 
     if ($Version -notmatch '^(\d+)\.(\d+)\.(\d+)$') {
-        throw "La versión '$Version' no cumple el formato semántico estricto mayor.menor.parche (ej. 0.0.1)."
-    }
-    if ([int]$Matches[3] -gt 9) {
-        throw "Regla del .9: El parche '$Version' excede 9. Avanza la versión menor (ej. de 1.0.9 pasa a 1.1.0)."
+        throw "La versión '$Version' no cumple el formato semántico estricto mayor.menor.parche (ej. 0.0.1 o 1.0.0)."
     }
 }
 

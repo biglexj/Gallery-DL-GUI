@@ -72,6 +72,14 @@ object SynapseUriParser {
         }.getOrNull()
     }
 
+    private fun unescapeJsonString(str: String): String {
+        return str.replace("\\\\", "\\")
+            .replace("\\\"", "\"")
+            .replace("\\/", "/")
+            .replace("\\t", "\t")
+            .replace("\\n", "\n")
+    }
+
     private fun parseJsonPayload(json: String): SynapseAction? {
         val actionPattern = """\"action\"\s*:\s*\"([^\"]+)\"""".toRegex()
         val urlPattern = """\"url\"\s*:\s*\"([^\"]+)\"""".toRegex()
@@ -79,10 +87,10 @@ object SynapseUriParser {
         val sourcePattern = """\"source\"\s*:\s*\"([^\"]+)\"""".toRegex()
         val silentPattern = """\"silent\"\s*:\s*(true|false)""".toRegex()
 
-        val action = actionPattern.find(json)?.groupValues?.get(1)?.lowercase() ?: "download"
-        val url = urlPattern.find(json)?.groupValues?.get(1)
-        val dest = destPattern.find(json)?.groupValues?.get(1)
-        val source = sourcePattern.find(json)?.groupValues?.get(1) ?: "JsonSynapse"
+        val action = actionPattern.find(json)?.groupValues?.get(1)?.let { unescapeJsonString(it).lowercase() } ?: "download"
+        val url = urlPattern.find(json)?.groupValues?.get(1)?.let { unescapeJsonString(it) }
+        val dest = destPattern.find(json)?.groupValues?.get(1)?.let { unescapeJsonString(it) }
+        val source = sourcePattern.find(json)?.groupValues?.get(1)?.let { unescapeJsonString(it) } ?: "JsonSynapse"
         val silent = silentPattern.find(json)?.groupValues?.get(1)?.toBooleanStrictOrNull() ?: false
 
         return when (action) {
