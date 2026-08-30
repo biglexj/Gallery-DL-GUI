@@ -1,0 +1,16 @@
+﻿# yaml-language-server: $schema=https://aka.ms/winget-manifest.installer.1.10.0.schema.json
+PackageIdentifier: biglexj.GalleryDLGUI
+PackageVersion: 1.0.0
+InstallerType: exe
+Scope: user
+InstallModes:
+  - interactive
+  - silent
+UpgradeBehavior: install
+ReleaseDate: 2026-08-30
+Installers:
+  - Architecture: x64
+    InstallerUrl: https://github.com/biglexj/Gallery-DL-GUI/releases/download/v1.0.0/GalleryDL-GUI-Windows-1.0.0.exe
+    InstallerSha256: 98B8FE5635831E9958EF65B247C71E95364E57006CA7D7D085EDAB9A0D912EDC
+ManifestType: installer
+ManifestVersion: 1.10.0
