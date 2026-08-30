@@ -6,6 +6,9 @@ Scope: user
 InstallModes:
   - interactive
   - silent
+InstallerSwitches:
+  Silent: /passive
+  SilentWithProgress: /passive
 UpgradeBehavior: install
 ReleaseDate: 2026-08-30
 Installers:
