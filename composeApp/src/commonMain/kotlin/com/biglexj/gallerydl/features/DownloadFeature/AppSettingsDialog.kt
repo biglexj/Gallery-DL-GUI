@@ -105,15 +105,17 @@ fun AppSettingsDialog(
                         )
                     } else {
                         Row(
-                            modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min),
-                            horizontalArrangement = Arrangement.spacedBy(16.dp)
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(16.dp),
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
                             // Columna 1: Iniciar con Windows
-                            Column(
-                                modifier = Modifier.weight(1f).fillMaxHeight(),
-                                verticalArrangement = Arrangement.SpaceBetween
+                            Row(
+                                modifier = Modifier.weight(1f),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.SpaceBetween
                             ) {
-                                Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                                Column(modifier = Modifier.weight(1f).padding(end = 8.dp)) {
                                     Text(
                                         text = "Iniciar con Windows",
                                         style = MaterialTheme.typography.bodyLarge,
@@ -125,7 +127,6 @@ fun AppSettingsDialog(
                                         color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                 }
-                                Spacer(modifier = Modifier.height(6.dp))
                                 Switch(
                                     checked = autoStart,
                                     onCheckedChange = onSetAutoStart
@@ -135,16 +136,17 @@ fun AppSettingsDialog(
                             Box(
                                 modifier = Modifier
                                     .width(1.dp)
-                                    .fillMaxHeight()
+                                    .height(44.dp)
                                     .background(MaterialTheme.colorScheme.outline.copy(alpha = 0.12f))
                             )
 
                             // Columna 2: Minimizar en lugar de cerrar
-                            Column(
-                                modifier = Modifier.weight(1f).fillMaxHeight(),
-                                verticalArrangement = Arrangement.SpaceBetween
+                            Row(
+                                modifier = Modifier.weight(1f),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.SpaceBetween
                             ) {
-                                Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                                Column(modifier = Modifier.weight(1f).padding(end = 8.dp)) {
                                     Text(
                                         text = "Minimizar al cerrar",
                                         style = MaterialTheme.typography.bodyLarge,
@@ -156,7 +158,6 @@ fun AppSettingsDialog(
                                         color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                 }
-                                Spacer(modifier = Modifier.height(6.dp))
                                 Switch(
                                     checked = minimizeToTray,
                                     onCheckedChange = onSetMinimizeToTray
@@ -192,11 +193,12 @@ fun AppSettingsDialog(
                             color = MaterialTheme.colorScheme.outline.copy(alpha = 0.12f)
                         )
 
-                        Column(
+                        Row(
                             modifier = Modifier.fillMaxWidth(),
-                            verticalArrangement = Arrangement.spacedBy(6.dp)
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
                         ) {
-                            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                            Column(modifier = Modifier.weight(1f).padding(end = 8.dp)) {
                                 Text(
                                     text = "Cookies de sesión",
                                     style = MaterialTheme.typography.bodyLarge,
@@ -205,51 +207,43 @@ fun AppSettingsDialog(
                                 Text(
                                     text = cookieFeedback ?: "Archivos de sesión para sitios restringidos.",
                                     style = MaterialTheme.typography.bodySmall,
-                                    color = if (cookieFeedback?.startsWith("✅") == true) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                                    color = if (cookieFeedback?.startsWith("✅") == true || cookieFeedback?.startsWith("Cargada") == true)
+                                        MaterialTheme.colorScheme.primary
+                                    else
+                                        MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
-                            Row(
-                                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                if (onReplaceCookie != null) {
-                                    OutlinedButton(
-                                        onClick = {
-                                            coroutineScope.launch {
-                                                val res = onReplaceCookie()
-                                                if (res != null) {
-                                                    cookieFeedback = res
-                                                }
-                                            }
-                                        },
-                                        shape = RoundedCornerShape(50),
-                                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 2.dp),
-                                        modifier = Modifier.height(34.dp)
-                                    ) {
-                                        Text("🔄 Reemplazar", style = MaterialTheme.typography.labelSmall)
-                                    }
-                                }
+                            if (onReplaceCookie != null) {
                                 OutlinedButton(
-                                    onClick = onOpenCookiesFolder,
+                                    onClick = {
+                                        coroutineScope.launch {
+                                            val res = onReplaceCookie()
+                                            if (res != null) {
+                                                cookieFeedback = res
+                                            }
+                                        }
+                                    },
                                     shape = RoundedCornerShape(50),
-                                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 2.dp),
-                                    modifier = Modifier.height(34.dp)
+                                    contentPadding = PaddingValues(horizontal = 14.dp, vertical = 2.dp),
+                                    modifier = Modifier.height(32.dp)
                                 ) {
-                                    Text("📁", style = MaterialTheme.typography.labelSmall)
+                                    Text("Cargar", style = MaterialTheme.typography.labelSmall)
                                 }
                             }
                         }
                     } else {
                         Row(
-                            modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min),
-                            horizontalArrangement = Arrangement.spacedBy(16.dp)
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(16.dp),
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
                             // Columna 1: Extensión de navegador
-                            Column(
-                                modifier = Modifier.weight(1f).fillMaxHeight(),
-                                verticalArrangement = Arrangement.SpaceBetween
+                            Row(
+                                modifier = Modifier.weight(1f),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.SpaceBetween
                             ) {
-                                Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                                Column(modifier = Modifier.weight(1f).padding(end = 8.dp)) {
                                     Text(
                                         text = "Extensión de navegador",
                                         style = MaterialTheme.typography.bodyLarge,
@@ -261,7 +255,6 @@ fun AppSettingsDialog(
                                         color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                 }
-                                Spacer(modifier = Modifier.height(6.dp))
                                 Switch(
                                     checked = extensionEnabled,
                                     onCheckedChange = { isChecked ->
@@ -276,16 +269,17 @@ fun AppSettingsDialog(
                             Box(
                                 modifier = Modifier
                                     .width(1.dp)
-                                    .fillMaxHeight()
+                                    .height(44.dp)
                                     .background(MaterialTheme.colorScheme.outline.copy(alpha = 0.12f))
                             )
 
                             // Columna 2: Cookies de sesión
-                            Column(
-                                modifier = Modifier.weight(1f).fillMaxHeight(),
-                                verticalArrangement = Arrangement.SpaceBetween
+                            Row(
+                                modifier = Modifier.weight(1f),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.SpaceBetween
                             ) {
-                                Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                                Column(modifier = Modifier.weight(1f).padding(end = 8.dp)) {
                                     Text(
                                         text = "Cookies de sesión",
                                         style = MaterialTheme.typography.bodyLarge,
@@ -294,38 +288,27 @@ fun AppSettingsDialog(
                                     Text(
                                         text = cookieFeedback ?: "Archivos de sesión para sitios restringidos.",
                                         style = MaterialTheme.typography.bodySmall,
-                                        color = if (cookieFeedback?.startsWith("✅") == true) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                                        color = if (cookieFeedback?.startsWith("✅") == true || cookieFeedback?.startsWith("Cargada") == true)
+                                            MaterialTheme.colorScheme.primary
+                                        else
+                                            MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                 }
-                                Spacer(modifier = Modifier.height(6.dp))
-                                Row(
-                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    if (onReplaceCookie != null) {
-                                        OutlinedButton(
-                                            onClick = {
-                                                coroutineScope.launch {
-                                                    val res = onReplaceCookie()
-                                                    if (res != null) {
-                                                        cookieFeedback = res
-                                                    }
-                                                }
-                                            },
-                                            shape = RoundedCornerShape(50),
-                                            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 2.dp),
-                                            modifier = Modifier.height(34.dp)
-                                        ) {
-                                            Text("🔄 Reemplazar", style = MaterialTheme.typography.labelSmall)
-                                        }
-                                    }
+                                if (onReplaceCookie != null) {
                                     OutlinedButton(
-                                        onClick = onOpenCookiesFolder,
+                                        onClick = {
+                                            coroutineScope.launch {
+                                                val res = onReplaceCookie()
+                                                if (res != null) {
+                                                    cookieFeedback = res
+                                                }
+                                            }
+                                        },
                                         shape = RoundedCornerShape(50),
-                                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 2.dp),
-                                        modifier = Modifier.height(34.dp)
+                                        contentPadding = PaddingValues(horizontal = 14.dp, vertical = 2.dp),
+                                        modifier = Modifier.height(32.dp)
                                     ) {
-                                        Text("📁", style = MaterialTheme.typography.labelSmall)
+                                        Text("Cargar", style = MaterialTheme.typography.labelSmall)
                                     }
                                 }
                             }
