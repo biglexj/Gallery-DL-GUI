@@ -19,6 +19,8 @@ El binario de fábrica distribuido con la aplicación se actualiza a `gallery-dl
 
 El instalador oficial para Windows se moderniza por completo con una plantilla limpia basada en Inno Setup, ofreciendo una presentación visual fluida con tema claro y oscuro automático adaptado a Windows 11, instalación por usuario sin requerir elevación de permisos de administrador y actualización transparente en el mismo directorio.
 
+El diálogo de Ajustes se rediseña con una distribución simétrica en dos columnas, organizando los controles de inicio con Windows, minimización a la bandeja y extensión de navegador junto con un cargador directo de cookies de sesión para sitios web restringidos.
+
 Se unifican los metadatos de versión en todo el ecosistema de la aplicación, garantizando que el diálogo de Ajustes, el endpoint de estado de Aurora Synapse y el empaquetador informen de manera coherente la versión activa `1.0.1`.
 
 ---

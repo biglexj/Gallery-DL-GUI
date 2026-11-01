@@ -6,6 +6,7 @@
 
 - 🔄 **Actualizador integrado del motor**: Ahora puedes verificar y actualizar el motor extractor (`gallery-dl`) directamente desde el panel de Ajustes con un solo clic, obteniendo las últimas versiones de Codeberg al instante sin reinstalar la aplicación.
 - ⚡ **Motor base actualizado a v1.32.19**: Se incorpora de serie la última versión de `gallery-dl`, con controladores y parches de compatibilidad mejorados para DeviantArt, Instagram, Newgrounds y más.
+- 🎨 **Panel de Ajustes renovado**: Nueva interfaz organizada en dos columnas con controles rápidos para inicio con Windows, minimización a la bandeja, extensión y un cargador directo de cookies de sesión para sitios restringidos.
 - 📦 **Instalador de Windows modernizado (Inno Setup)**: El nuevo instalador EXE adopta la plantilla visual propia de Biglex con soporte automático de modo claro/oscuro en Windows 11 y esquinas redondeadas.
 - 👤 **Instalación por usuario sin elevación**: Instalación ágil en `%LOCALAPPDATA%\Programs\GalleryDL-GUI` sin requerir permisos de administrador y con actualización directa sobre el mismo directorio.
 - 🧩 **Coexistencia y metadatos unificados**: Sincronización completa de versiones en la interfaz, el protocolo Aurora Synapse y convivencia documentada con instalaciones anteriores.
