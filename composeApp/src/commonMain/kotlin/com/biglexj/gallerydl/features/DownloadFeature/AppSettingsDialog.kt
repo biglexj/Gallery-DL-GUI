@@ -105,17 +105,15 @@ fun AppSettingsDialog(
                         )
                     } else {
                         Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(16.dp),
-                            verticalAlignment = Alignment.CenterVertically
+                            modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min),
+                            horizontalArrangement = Arrangement.spacedBy(16.dp)
                         ) {
                             // Columna 1: Iniciar con Windows
-                            Row(
-                                modifier = Modifier.weight(1f),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.SpaceBetween
+                            Column(
+                                modifier = Modifier.weight(1f).fillMaxHeight(),
+                                verticalArrangement = Arrangement.SpaceBetween
                             ) {
-                                Column(modifier = Modifier.weight(1f).padding(end = 8.dp)) {
+                                Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
                                     Text(
                                         text = "Iniciar con Windows",
                                         style = MaterialTheme.typography.bodyLarge,
@@ -127,6 +125,7 @@ fun AppSettingsDialog(
                                         color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                 }
+                                Spacer(modifier = Modifier.height(6.dp))
                                 Switch(
                                     checked = autoStart,
                                     onCheckedChange = onSetAutoStart
@@ -136,17 +135,16 @@ fun AppSettingsDialog(
                             Box(
                                 modifier = Modifier
                                     .width(1.dp)
-                                    .height(44.dp)
+                                    .fillMaxHeight()
                                     .background(MaterialTheme.colorScheme.outline.copy(alpha = 0.12f))
                             )
 
                             // Columna 2: Minimizar en lugar de cerrar
-                            Row(
-                                modifier = Modifier.weight(1f),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.SpaceBetween
+                            Column(
+                                modifier = Modifier.weight(1f).fillMaxHeight(),
+                                verticalArrangement = Arrangement.SpaceBetween
                             ) {
-                                Column(modifier = Modifier.weight(1f).padding(end = 8.dp)) {
+                                Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
                                     Text(
                                         text = "Minimizar al cerrar",
                                         style = MaterialTheme.typography.bodyLarge,
@@ -158,6 +156,7 @@ fun AppSettingsDialog(
                                         color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                 }
+                                Spacer(modifier = Modifier.height(6.dp))
                                 Switch(
                                     checked = minimizeToTray,
                                     onCheckedChange = onSetMinimizeToTray
@@ -193,16 +192,15 @@ fun AppSettingsDialog(
                             color = MaterialTheme.colorScheme.outline.copy(alpha = 0.12f)
                         )
 
-                        Row(
+                        Column(
                             modifier = Modifier.fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween
+                            verticalArrangement = Arrangement.spacedBy(6.dp)
                         ) {
-                            Column(modifier = Modifier.weight(1f).padding(end = 8.dp)) {
+                            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
                                 Text(
                                     text = "Cookies de sesión",
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    fontWeight = FontWeight.SemiBold
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    fontWeight = FontWeight.Medium
                                 )
                                 Text(
                                     text = cookieFeedback ?: "Archivos de sesión para sitios restringidos.",
@@ -210,7 +208,10 @@ fun AppSettingsDialog(
                                     color = if (cookieFeedback?.startsWith("✅") == true) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
-                            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                            Row(
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
                                 if (onReplaceCookie != null) {
                                     OutlinedButton(
                                         onClick = {
@@ -222,7 +223,7 @@ fun AppSettingsDialog(
                                             }
                                         },
                                         shape = RoundedCornerShape(50),
-                                        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 2.dp),
+                                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 2.dp),
                                         modifier = Modifier.height(34.dp)
                                     ) {
                                         Text("🔄 Reemplazar", style = MaterialTheme.typography.labelSmall)
@@ -231,7 +232,7 @@ fun AppSettingsDialog(
                                 OutlinedButton(
                                     onClick = onOpenCookiesFolder,
                                     shape = RoundedCornerShape(50),
-                                    contentPadding = PaddingValues(horizontal = 10.dp, vertical = 2.dp),
+                                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 2.dp),
                                     modifier = Modifier.height(34.dp)
                                 ) {
                                     Text("📁", style = MaterialTheme.typography.labelSmall)
@@ -240,17 +241,15 @@ fun AppSettingsDialog(
                         }
                     } else {
                         Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(16.dp),
-                            verticalAlignment = Alignment.CenterVertically
+                            modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min),
+                            horizontalArrangement = Arrangement.spacedBy(16.dp)
                         ) {
                             // Columna 1: Extensión de navegador
-                            Row(
-                                modifier = Modifier.weight(1f),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.SpaceBetween
+                            Column(
+                                modifier = Modifier.weight(1f).fillMaxHeight(),
+                                verticalArrangement = Arrangement.SpaceBetween
                             ) {
-                                Column(modifier = Modifier.weight(1f).padding(end = 8.dp)) {
+                                Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
                                     Text(
                                         text = "Extensión de navegador",
                                         style = MaterialTheme.typography.bodyLarge,
@@ -262,6 +261,7 @@ fun AppSettingsDialog(
                                         color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                 }
+                                Spacer(modifier = Modifier.height(6.dp))
                                 Switch(
                                     checked = extensionEnabled,
                                     onCheckedChange = { isChecked ->
@@ -276,17 +276,16 @@ fun AppSettingsDialog(
                             Box(
                                 modifier = Modifier
                                     .width(1.dp)
-                                    .height(44.dp)
+                                    .fillMaxHeight()
                                     .background(MaterialTheme.colorScheme.outline.copy(alpha = 0.12f))
                             )
 
                             // Columna 2: Cookies de sesión
-                            Row(
-                                modifier = Modifier.weight(1f),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.SpaceBetween
+                            Column(
+                                modifier = Modifier.weight(1f).fillMaxHeight(),
+                                verticalArrangement = Arrangement.SpaceBetween
                             ) {
-                                Column(modifier = Modifier.weight(1f).padding(end = 8.dp)) {
+                                Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
                                     Text(
                                         text = "Cookies de sesión",
                                         style = MaterialTheme.typography.bodyLarge,
@@ -298,7 +297,11 @@ fun AppSettingsDialog(
                                         color = if (cookieFeedback?.startsWith("✅") == true) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                 }
-                                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                Spacer(modifier = Modifier.height(6.dp))
+                                Row(
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
                                     if (onReplaceCookie != null) {
                                         OutlinedButton(
                                             onClick = {
@@ -310,7 +313,7 @@ fun AppSettingsDialog(
                                                 }
                                             },
                                             shape = RoundedCornerShape(50),
-                                            contentPadding = PaddingValues(horizontal = 10.dp, vertical = 2.dp),
+                                            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 2.dp),
                                             modifier = Modifier.height(34.dp)
                                         ) {
                                             Text("🔄 Reemplazar", style = MaterialTheme.typography.labelSmall)
@@ -319,7 +322,7 @@ fun AppSettingsDialog(
                                     OutlinedButton(
                                         onClick = onOpenCookiesFolder,
                                         shape = RoundedCornerShape(50),
-                                        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 2.dp),
+                                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 2.dp),
                                         modifier = Modifier.height(34.dp)
                                     ) {
                                         Text("📁", style = MaterialTheme.typography.labelSmall)
