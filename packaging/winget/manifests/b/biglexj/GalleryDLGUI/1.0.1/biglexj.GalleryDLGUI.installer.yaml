@@ -1,4 +1,4 @@
-# yaml-language-server: $schema=https://aka.ms/winget-manifest.installer.1.10.0.schema.json
+﻿# yaml-language-server: $schema=https://aka.ms/winget-manifest.installer.1.10.0.schema.json
 PackageIdentifier: biglexj.GalleryDLGUI
 PackageVersion: 1.0.1
 # Instalador Inno Setup (Biglex Modern 2.0). El tipo "inno" del esquema de
@@ -15,10 +15,10 @@ InstallerSwitches:
   Silent: /VERYSILENT /SUPPRESSMSGBOXES /NORESTART /SP-
   SilentWithProgress: /SILENT /SUPPRESSMSGBOXES /NORESTART /SP-
 UpgradeBehavior: install
-ReleaseDate: 2026-10-26
+ReleaseDate: 2026-11-01
 Installers:
   - Architecture: x64
     InstallerUrl: https://github.com/biglexj/Gallery-DL-GUI/releases/download/v1.0.1/GalleryDL-GUI-Setup-1.0.1.exe
-    InstallerSha256: 4A0AC29FAF54CAABEF79F6464393D563D1C925124F7B98EED465B7C13546A653
+    InstallerSha256: F3DDFA9B5E7AB5BDE9CEB055E31433292B4B90B11D81828CDDBD6D96D80D048A
 ManifestType: installer
 ManifestVersion: 1.10.0
