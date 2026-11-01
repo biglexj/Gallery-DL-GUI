@@ -1,6 +1,9 @@
 package com.biglexj.gallerydl.features.DownloadFeature
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsHoveredAsState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -375,11 +378,43 @@ fun AppSettingsDialog(
                 }
             },
             confirmButton = {
-                TextButton(
+                val closeInteractionSource = remember { MutableInteractionSource() }
+                val isCloseHovered by closeInteractionSource.collectIsHoveredAsState()
+
+                OutlinedButton(
                     onClick = onDismiss,
-                    modifier = Modifier.padding(top = if (isMobile) 4.dp else 0.dp, bottom = 0.dp)
+                    interactionSource = closeInteractionSource,
+                    shape = RoundedCornerShape(50),
+                    border = BorderStroke(
+                        width = 1.dp,
+                        color = if (isCloseHovered) {
+                            MaterialTheme.colorScheme.primary.copy(alpha = 0.65f)
+                        } else {
+                            MaterialTheme.colorScheme.outline.copy(alpha = 0.28f)
+                        }
+                    ),
+                    colors = ButtonDefaults.outlinedButtonColors(
+                        containerColor = if (isCloseHovered) {
+                            MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.70f)
+                        } else {
+                            MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.30f)
+                        },
+                        contentColor = if (isCloseHovered) {
+                            MaterialTheme.colorScheme.primary
+                        } else {
+                            MaterialTheme.colorScheme.onSurfaceVariant
+                        }
+                    ),
+                    contentPadding = PaddingValues(horizontal = 24.dp, vertical = 6.dp),
+                    modifier = Modifier
+                        .height(38.dp)
+                        .padding(top = if (isMobile) 4.dp else 0.dp, bottom = 0.dp)
                 ) {
-                    Text("Cerrar", fontWeight = FontWeight.Bold)
+                    Text(
+                        text = "Cerrar",
+                        style = MaterialTheme.typography.labelLarge,
+                        fontWeight = FontWeight.SemiBold
+                    )
                 }
             },
             shape = RoundedCornerShape(24.dp)
