@@ -168,28 +168,132 @@ fun AppSettingsDialog(
                         color = MaterialTheme.colorScheme.outline.copy(alpha = 0.12f)
                     )
 
-                    // 3. Extensión de navegador
-                    SettingsRow(
-                        title = "Extensión de navegador",
-                        subtitle = if (extensionEnabled)
-                            "Host registrado en Windows. Abre la página para agregar la extensión a Chrome/Edge."
-                        else
-                            "Activa la conexión para sincronizar cookies y descargar galerías con un clic.",
-                        checked = extensionEnabled,
-                        onCheckedChange = { isChecked ->
-                            extensionEnabled = isChecked
-                            if (isChecked) {
-                                onOpenUrl("https://github.com/biglexj/Gallery-DL-GUI/tree/main/extension#readme")
+                    // 3. Extensión de navegador & Cookies de sesión (Dos columnas en escritorio)
+                    if (isMobile) {
+                        SettingsRow(
+                            title = "Extensión de navegador",
+                            subtitle = if (extensionEnabled)
+                                "Host registrado en Windows. Abre la página para agregar la extensión a Chrome/Edge."
+                            else
+                                "Activa la conexión para sincronizar cookies y descargar galerías con un clic.",
+                            checked = extensionEnabled,
+                            onCheckedChange = { isChecked ->
+                                extensionEnabled = isChecked
+                                if (isChecked) {
+                                    onOpenUrl("https://github.com/biglexj/Gallery-DL-GUI/tree/main/extension#readme")
+                                }
+                            }
+                        )
+
+                        HorizontalDivider(
+                            modifier = Modifier.padding(vertical = dividerPadding),
+                            color = MaterialTheme.colorScheme.outline.copy(alpha = 0.12f)
+                        )
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Column(modifier = Modifier.weight(1f).padding(end = 8.dp)) {
+                                Text(
+                                    text = "Cookies de sesión",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    fontWeight = FontWeight.SemiBold
+                                )
+                                Text(
+                                    text = "Archivos de sesión para sitios restringidos.",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                            OutlinedButton(
+                                onClick = onOpenCookiesFolder,
+                                shape = RoundedCornerShape(50),
+                                contentPadding = PaddingValues(horizontal = 14.dp, vertical = 4.dp),
+                                modifier = Modifier.height(34.dp)
+                            ) {
+                                Text("📁 Cookies", style = MaterialTheme.typography.labelMedium)
                             }
                         }
-                    )
+                    } else {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(16.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            // Columna 1: Extensión de navegador
+                            Row(
+                                modifier = Modifier.weight(1f),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Column(modifier = Modifier.weight(1f).padding(end = 8.dp)) {
+                                    Text(
+                                        text = "Extensión de navegador",
+                                        style = MaterialTheme.typography.bodyLarge,
+                                        fontWeight = FontWeight.Medium
+                                    )
+                                    Text(
+                                        text = if (extensionEnabled) "Conectada a Chrome/Edge." else "Sincroniza descargas con un clic.",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                                Switch(
+                                    checked = extensionEnabled,
+                                    onCheckedChange = { isChecked ->
+                                        extensionEnabled = isChecked
+                                        if (isChecked) {
+                                            onOpenUrl("https://github.com/biglexj/Gallery-DL-GUI/tree/main/extension#readme")
+                                        }
+                                    }
+                                )
+                            }
+
+                            Box(
+                                modifier = Modifier
+                                    .width(1.dp)
+                                    .height(44.dp)
+                                    .background(MaterialTheme.colorScheme.outline.copy(alpha = 0.12f))
+                            )
+
+                            // Columna 2: Cookies de sesión
+                            Row(
+                                modifier = Modifier.weight(1f),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Column(modifier = Modifier.weight(1f).padding(end = 8.dp)) {
+                                    Text(
+                                        text = "Cookies de sesión",
+                                        style = MaterialTheme.typography.bodyLarge,
+                                        fontWeight = FontWeight.Medium
+                                    )
+                                    Text(
+                                        text = "Archivos de sesión para sitios restringidos.",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                                OutlinedButton(
+                                    onClick = onOpenCookiesFolder,
+                                    shape = RoundedCornerShape(50),
+                                    contentPadding = PaddingValues(horizontal = 14.dp, vertical = 4.dp),
+                                    modifier = Modifier.height(34.dp)
+                                ) {
+                                    Text("📁 Cookies", style = MaterialTheme.typography.labelMedium)
+                                }
+                            }
+                        }
+                    }
 
                     HorizontalDivider(
                         modifier = Modifier.padding(vertical = dividerPadding),
                         color = MaterialTheme.colorScheme.outline.copy(alpha = 0.12f)
                     )
 
-                    // 4. Controladores del motor / Cookies
+                    // 4. Controlador del motor (Independiente)
                     Column(
                         modifier = Modifier.fillMaxWidth(),
                         verticalArrangement = Arrangement.spacedBy(6.dp)
@@ -199,15 +303,15 @@ fun AppSettingsDialog(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
-                            Column(modifier = Modifier.weight(1f).padding(end = 8.dp)) {
+                            Column(modifier = Modifier.weight(1f).padding(end = 12.dp)) {
                                 Row(
                                     verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                                 ) {
                                     Text(
-                                        text = "Controladores del motor",
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        fontWeight = FontWeight.SemiBold
+                                        text = "Controlador del motor",
+                                        style = MaterialTheme.typography.bodyLarge,
+                                        fontWeight = FontWeight.Medium
                                     )
                                     if (currentEngineVer != null) {
                                         Surface(
@@ -227,56 +331,46 @@ fun AppSettingsDialog(
                                     }
                                 }
                                 Text(
-                                    text = "Motor extractor (gallery-dl) y cookies sincronizadas.",
+                                    text = "Motor extractor (gallery-dl) y componentes de descarga.",
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
-                            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                                OutlinedButton(
-                                    onClick = onOpenCookiesFolder,
+                            if (onUpdateEngine != null) {
+                                Button(
+                                    onClick = {
+                                        if (!isUpdatingEngine) {
+                                            coroutineScope.launch {
+                                                isUpdatingEngine = true
+                                                engineStatusMessage = "🔍 Comprobando última versión en Codeberg..."
+                                                runCatching {
+                                                    onUpdateEngine { status ->
+                                                        engineStatusMessage = status
+                                                        if (status.contains("actualizado exitosamente a v")) {
+                                                            val newTag = status.substringAfter("actualizado exitosamente a v").trim()
+                                                            currentEngineVer = newTag
+                                                        }
+                                                    }
+                                                }.onFailure { e ->
+                                                    engineStatusMessage = "⚠️ Error: ${e.message}"
+                                                }
+                                                isUpdatingEngine = false
+                                            }
+                                        }
+                                    },
+                                    enabled = !isUpdatingEngine,
                                     shape = RoundedCornerShape(50),
-                                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
+                                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp),
                                     modifier = Modifier.height(34.dp)
                                 ) {
-                                    Text("📁 Cookies", style = MaterialTheme.typography.labelMedium)
-                                }
-                                if (onUpdateEngine != null) {
-                                    Button(
-                                        onClick = {
-                                            if (!isUpdatingEngine) {
-                                                coroutineScope.launch {
-                                                    isUpdatingEngine = true
-                                                    engineStatusMessage = "🔍 Comprobando última versión en Codeberg..."
-                                                    runCatching {
-                                                        onUpdateEngine { status ->
-                                                            engineStatusMessage = status
-                                                            if (status.contains("actualizado exitosamente a v")) {
-                                                                val newTag = status.substringAfter("actualizado exitosamente a v").trim()
-                                                                currentEngineVer = newTag
-                                                            }
-                                                        }
-                                                    }.onFailure { e ->
-                                                        engineStatusMessage = "⚠️ Error: ${e.message}"
-                                                    }
-                                                    isUpdatingEngine = false
-                                                }
-                                            }
-                                        },
-                                        enabled = !isUpdatingEngine,
-                                        shape = RoundedCornerShape(50),
-                                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
-                                        modifier = Modifier.height(34.dp)
-                                    ) {
-                                        if (isUpdatingEngine) {
-                                            CircularProgressIndicator(
-                                                modifier = Modifier.size(16.dp),
-                                                strokeWidth = 2.dp,
-                                                color = MaterialTheme.colorScheme.onPrimary
-                                            )
-                                        } else {
-                                            Text("🔄 Actualizar", style = MaterialTheme.typography.labelMedium)
-                                        }
+                                    if (isUpdatingEngine) {
+                                        CircularProgressIndicator(
+                                            modifier = Modifier.size(16.dp),
+                                            strokeWidth = 2.dp,
+                                            color = MaterialTheme.colorScheme.onPrimary
+                                        )
+                                    } else {
+                                        Text("🔄 Actualizar motor", style = MaterialTheme.typography.labelMedium)
                                     }
                                 }
                             }
