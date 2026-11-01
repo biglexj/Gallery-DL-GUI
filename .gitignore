@@ -27,3 +27,8 @@ Thumbs.db
 # Artefactos de salida de release
 /release/
 
+# Staging y salida de Inno Setup (generados por scripts\packaging)
+/packaging/windows/app/
+/packaging/windows/Output/
+
+*.zip

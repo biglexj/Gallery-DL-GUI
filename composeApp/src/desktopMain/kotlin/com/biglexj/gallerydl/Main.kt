@@ -14,6 +14,9 @@ import com.biglexj.gallerydl.features.DownloadFeature.DownloadHistoryItem
 import com.biglexj.gallerydl.platform.AppSettings
 import com.biglexj.gallerydl.platform.DesktopDownloadService
 import com.biglexj.gallerydl.platform.DirectoryChooser
+import com.biglexj.gallerydl.platform.Downloader
+import com.biglexj.gallerydl.platform.EngineUpdateCheckResult
+import com.biglexj.gallerydl.platform.EngineUpdateService
 import com.biglexj.gallerydl.platform.InterceptionServer
 import com.biglexj.gallerydl.platform.ModernTrayManager
 import com.biglexj.gallerydl.platform.SingleInstanceLock
@@ -108,6 +111,7 @@ fun main(args: Array<String>) {
             val saved = appSettings.themeMode
             mutableStateOf(ThemeMode.values().firstOrNull { it.name.equals(saved, ignoreCase = true) } ?: ThemeMode.System)
         }
+        var engineVersionState by remember { mutableStateOf<String?>(Downloader.getActiveEngineVersion()) }
         var focusTrigger by remember { mutableStateOf(0) }
 
         // Listen for Synapse actions and focus requests from duplicate launches
@@ -251,6 +255,41 @@ fun main(args: Array<String>) {
                     autoStart = autoStartState,
                     minimizeToTray = minimizeToTrayState,
                     themeMode = themeModeState,
+                    engineVersion = engineVersionState,
+                    onUpdateEngine = { onStatus ->
+                        onStatus("🔍 Comprobando última versión en Codeberg...")
+                        val check = EngineUpdateService.checkUpdate()
+                        when (check) {
+                            is EngineUpdateCheckResult.UpToDate -> {
+                                onStatus("✅ El motor ya está al día (v${check.currentVersion})")
+                            }
+                            is EngineUpdateCheckResult.Error -> {
+                                onStatus("⚠️ ${check.message}")
+                            }
+                            is EngineUpdateCheckResult.UpdateAvailable -> {
+                                onStatus("⬇️ Descargando v${check.latestVersion}...")
+                                val result = EngineUpdateService.downloadAndUpdate(
+                                    downloadUrl = check.downloadUrl,
+                                    expectedVersion = check.latestVersion
+                                ) { progress: Float, downloaded: Long, total: Long ->
+                                    val pct = (progress * 100).toInt().coerceIn(0, 100)
+                                    val mbDownloaded = Math.round((downloaded / (1024.0 * 1024.0)) * 10) / 10.0
+                                    val mbTotal = Math.round((total / (1024.0 * 1024.0)) * 10) / 10.0
+                                    if (total > 0L) {
+                                        onStatus("⬇️ Descargando v${check.latestVersion}: $pct% ($mbDownloaded / $mbTotal MB)")
+                                    } else {
+                                        onStatus("⬇️ Descargando v${check.latestVersion} ($mbDownloaded MB)...")
+                                    }
+                                }
+                                result.onSuccess { newVer ->
+                                    engineVersionState = newVer
+                                    onStatus("✅ Motor actualizado exitosamente a v$newVer")
+                                }.onFailure { err ->
+                                    onStatus("⚠️ Error al instalar actualización: ${err.message}")
+                                }
+                            }
+                        }
+                    },
                     onSetAutoStart = { enabled ->
                         autoStartState = enabled
                         appSettings.autoStart = enabled

@@ -49,9 +49,11 @@ fun DownloadScreen(
     autoStart: Boolean = false,
     minimizeToTray: Boolean = true,
     themeMode: com.biglexj.gallerydl.theme.ThemeMode = com.biglexj.gallerydl.theme.ThemeMode.System,
+    engineVersion: String? = null,
     onSetAutoStart: (Boolean) -> Unit = {},
     onSetMinimizeToTray: (Boolean) -> Unit = {},
     onThemeModeSelected: (com.biglexj.gallerydl.theme.ThemeMode) -> Unit = {},
+    onUpdateEngine: (suspend ((String) -> Unit) -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     var url by remember { mutableStateOf("") }
@@ -236,6 +238,8 @@ fun DownloadScreen(
                     onSetMinimizeToTray = onSetMinimizeToTray,
                     onOpenCookiesFolder = { onOpenFolder("D:\\Documentos\\cookies") },
                     onOpenUrl = onOpenUrl,
+                    engineVersion = engineVersion,
+                    onUpdateEngine = onUpdateEngine,
                     onDismiss = { showSettingsDialog = false }
                 )
             }

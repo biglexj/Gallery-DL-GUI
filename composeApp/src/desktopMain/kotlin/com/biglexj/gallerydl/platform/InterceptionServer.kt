@@ -1,5 +1,6 @@
 package com.biglexj.gallerydl.platform
 
+import com.biglexj.gallerydl.AppVersion
 import com.biglexj.gallerydl.features.DownloadFeature.DownloadHistoryItem
 import com.sun.net.httpserver.HttpExchange
 import com.sun.net.httpserver.HttpServer
@@ -78,7 +79,7 @@ object InterceptionServer {
                 s.createContext("/status") { exchange ->
                     try {
                         if (handleCors(exchange)) return@createContext
-                        val response = "{\"status\":\"online\",\"version\":\"1.0.0\",\"protocol\":\"aurora-synapse\",\"app\":\"GalleryDL-GUI\"}"
+                        val response = "{\"status\":\"online\",\"version\":\"${AppVersion.VALUE}\",\"protocol\":\"aurora-synapse\",\"app\":\"GalleryDL-GUI\"}"
                         val bytes = response.toByteArray(Charsets.UTF_8)
                         exchange.responseHeaders.set("Content-Type", "application/json")
                         exchange.sendResponseHeaders(200, bytes.size.toLong())

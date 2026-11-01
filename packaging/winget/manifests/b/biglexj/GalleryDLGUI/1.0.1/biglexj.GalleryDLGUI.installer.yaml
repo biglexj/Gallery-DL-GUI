@@ -1,0 +1,24 @@
+# yaml-language-server: $schema=https://aka.ms/winget-manifest.installer.1.10.0.schema.json
+PackageIdentifier: biglexj.GalleryDLGUI
+PackageVersion: 1.0.1
+# Instalador Inno Setup (Biglex Modern 2.0). El tipo "inno" del esquema de
+# WinGet permite que el agente aplique los interruptores propios de Inno
+# Setup; el tipo generico "exe" tambien es valido pero exige declarar los
+# interruptores a mano. Ver packaging\windows\MIGRATION.md.
+InstallerType: inno
+Scope: user
+InstallModes:
+  - interactive
+  - silent
+  - silentWithProgress
+InstallerSwitches:
+  Silent: /VERYSILENT /SUPPRESSMSGBOXES /NORESTART /SP-
+  SilentWithProgress: /SILENT /SUPPRESSMSGBOXES /NORESTART /SP-
+UpgradeBehavior: install
+ReleaseDate: 2026-10-26
+Installers:
+  - Architecture: x64
+    InstallerUrl: https://github.com/biglexj/Gallery-DL-GUI/releases/download/v1.0.1/GalleryDL-GUI-Setup-1.0.1.exe
+    InstallerSha256: 4A0AC29FAF54CAABEF79F6464393D563D1C925124F7B98EED465B7C13546A653
+ManifestType: installer
+ManifestVersion: 1.10.0

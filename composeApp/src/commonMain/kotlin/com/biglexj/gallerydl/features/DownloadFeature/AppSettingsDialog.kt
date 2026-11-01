@@ -13,6 +13,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogProperties
+import com.biglexj.gallerydl.AppVersion
+import kotlinx.coroutines.launch
 
 @Composable
 fun AppSettingsDialog(
@@ -22,11 +24,17 @@ fun AppSettingsDialog(
     onSetMinimizeToTray: (Boolean) -> Unit,
     onOpenCookiesFolder: () -> Unit,
     onOpenUrl: (String) -> Unit,
-    appVersion: String = "1.0.0",
+    appVersion: String = AppVersion.VALUE,
+    engineVersion: String? = null,
+    onUpdateEngine: (suspend ((String) -> Unit) -> Unit)? = null,
     onDismiss: () -> Unit
 ) {
+    val coroutineScope = rememberCoroutineScope()
     var extensionEnabled by remember { mutableStateOf(true) }
     var updateMessage by remember { mutableStateOf<String?>(null) }
+    var isUpdatingEngine by remember { mutableStateOf(false) }
+    var engineStatusMessage by remember { mutableStateOf<String?>(null) }
+    var currentEngineVer by remember(engineVersion) { mutableStateOf(engineVersion) }
 
     BoxWithConstraints {
         val isMobile = maxWidth < 520.dp
@@ -116,30 +124,103 @@ fun AppSettingsDialog(
                     )
 
                     // 4. Controladores del motor / Cookies
-                    Row(
+                    Column(
                         modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
+                        verticalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
-                        Column(modifier = Modifier.weight(1f).padding(end = 8.dp)) {
-                            Text(
-                                text = "Controladores del motor",
-                                style = MaterialTheme.typography.bodyMedium,
-                                fontWeight = FontWeight.SemiBold
-                            )
-                            Text(
-                                text = "Componentes de extracción y cookies sincronizadas.",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                        OutlinedButton(
-                            onClick = onOpenCookiesFolder,
-                            shape = RoundedCornerShape(50),
-                            contentPadding = PaddingValues(horizontal = 14.dp, vertical = 4.dp),
-                            modifier = Modifier.height(34.dp)
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
                         ) {
-                            Text("📁 Cookies", style = MaterialTheme.typography.labelMedium)
+                            Column(modifier = Modifier.weight(1f).padding(end = 8.dp)) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                ) {
+                                    Text(
+                                        text = "Controladores del motor",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        fontWeight = FontWeight.SemiBold
+                                    )
+                                    if (currentEngineVer != null) {
+                                        Surface(
+                                            color = MaterialTheme.colorScheme.primaryContainer,
+                                            shape = RoundedCornerShape(6.dp)
+                                        ) {
+                                            Text(
+                                                text = "v$currentEngineVer",
+                                                style = MaterialTheme.typography.labelSmall,
+                                                color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                                fontWeight = FontWeight.Bold,
+                                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                            )
+                                        }
+                                    }
+                                }
+                                Text(
+                                    text = "Motor extractor (gallery-dl) y cookies sincronizadas.",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                OutlinedButton(
+                                    onClick = onOpenCookiesFolder,
+                                    shape = RoundedCornerShape(50),
+                                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
+                                    modifier = Modifier.height(34.dp)
+                                ) {
+                                    Text("📁 Cookies", style = MaterialTheme.typography.labelMedium)
+                                }
+                                if (onUpdateEngine != null) {
+                                    Button(
+                                        onClick = {
+                                            if (!isUpdatingEngine) {
+                                                coroutineScope.launch {
+                                                    isUpdatingEngine = true
+                                                    engineStatusMessage = "🔍 Comprobando última versión en Codeberg..."
+                                                    runCatching {
+                                                        onUpdateEngine { status ->
+                                                            engineStatusMessage = status
+                                                            if (status.contains("actualizado exitosamente a v")) {
+                                                                val newTag = status.substringAfter("actualizado exitosamente a v").trim()
+                                                                currentEngineVer = newTag
+                                                            }
+                                                        }
+                                                    }.onFailure { e ->
+                                                        engineStatusMessage = "⚠️ Error: ${e.message}"
+                                                    }
+                                                    isUpdatingEngine = false
+                                                }
+                                            }
+                                        },
+                                        enabled = !isUpdatingEngine,
+                                        shape = RoundedCornerShape(50),
+                                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
+                                        modifier = Modifier.height(34.dp)
+                                    ) {
+                                        if (isUpdatingEngine) {
+                                            CircularProgressIndicator(
+                                                modifier = Modifier.size(16.dp),
+                                                strokeWidth = 2.dp,
+                                                color = MaterialTheme.colorScheme.onPrimary
+                                            )
+                                        } else {
+                                            Text("🔄 Actualizar", style = MaterialTheme.typography.labelMedium)
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        if (engineStatusMessage != null) {
+                            Text(
+                                text = engineStatusMessage!!,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = if (engineStatusMessage!!.startsWith("⚠️")) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary,
+                                fontWeight = FontWeight.Medium,
+                                modifier = Modifier.fillMaxWidth().padding(top = 2.dp)
+                            )
                         }
                     }
 

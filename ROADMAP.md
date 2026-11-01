@@ -8,7 +8,7 @@ Plan de trabajo, objetivos de producto y hoja de ruta estratégica del proyecto.
 
 ## 🔴 Pendientes activos
 
-- [x] **v1.0.0** — Versión mayor oficial completada y lista para distribución.
+- [ ] **v1.0.1** — Actualizador integrado del motor (`gallery-dl`), núcleo de fábrica en `v1.32.19` e instalador moderno de Windows (Inno Setup) listo para publicación.
 
 ---
 

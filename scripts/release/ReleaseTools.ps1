@@ -18,11 +18,17 @@ function Invoke-Checked {
 }
 
 function Get-FullJdk {
-    $candidates = @(
-        "C:\Program Files\Microsoft\jdk-17.0.19.10-hotspot",
-        $env:JAVA_HOME,
-        "C:\Program Files\Android\Android Studio\jbr"
-    ) | Where-Object {
+    # Se prefieren los JDK 17 instalados por Microsoft: son los que usan
+    # jpackage y los que jvmTarget del proyecto (JVM_17) espera.
+    $candidates = @()
+    $candidates += Get-ChildItem -LiteralPath "C:\Program Files\Microsoft" -Directory -Filter "jdk-17*" -ErrorAction SilentlyContinue |
+        Sort-Object Name -Descending |
+        ForEach-Object { $_.FullName }
+    $candidates += "C:\Program Files\Java\jdk-17"
+    $candidates += $env:JAVA_HOME
+    $candidates += "C:\Program Files\Android\Android Studio\jbr"
+
+    $candidates = $candidates | Where-Object {
         $_ -and (Test-Path -LiteralPath (Join-Path $_ "bin\jpackage.exe"))
     }
 
@@ -61,6 +67,35 @@ function Assert-SemanticVersion {
 
     if ($Version -notmatch '^(\d+)\.(\d+)\.(\d+)$') {
         throw "La versión '$Version' no cumple el formato semántico estricto mayor.menor.parche (ej. 0.0.1 o 1.0.0)."
+    }
+}
+
+function Assert-AppVersionConstant {
+    # La version mostrada en Acerca de/Ajustes y en el endpoint /status sale de
+    # AppVersion.VALUE (composeApp\src\commonMain\...\AppVersion.kt). Si se
+    # desincroniza de gradle.properties, el binario announcing una version
+    # distinta de la que se empaqueta y publica.
+    param(
+        [Parameter(Mandatory)] [string]$Root,
+        [Parameter(Mandatory)] [string]$Version
+    )
+
+    $constantFile = Join-Path $Root "composeApp\src\commonMain\kotlin\com\biglexj\gallerydl\AppVersion.kt"
+    if (-not (Test-Path -LiteralPath $constantFile)) {
+        throw "No se encontró la constante de versión de la app: $constantFile"
+    }
+
+    $content = Get-Content -LiteralPath $constantFile -Raw -Encoding UTF8
+    $match = [regex]::Match($content, 'const\s+val\s+VALUE\s*=\s*"(\d+\.\d+\.\d+)"')
+    if (-not $match.Success) {
+        throw "No se pudo leer 'const val VALUE' en $constantFile."
+    }
+
+    $declared = $match.Groups[1].Value
+    if ($declared -ne $Version) {
+        throw ("La versión de la app que se muestra en pantalla (AppVersion.VALUE = '$declared') " +
+               "no coincide con la versión que se empaqueta ('$Version'). " +
+               "Actualiza AppVersion.kt o gradle.properties antes de entregar.")
     }
 }
 

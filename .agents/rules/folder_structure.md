@@ -25,7 +25,7 @@ D:\Proyectos\biglexj\Gallery-DL-GUI/                   # Raíz del repositorio
 │   └── es/guides/                  # Guías de referencia en español
 ├── scratch/                        # Scripts utilitarios de mantenimiento (solo raíz)
 ├── test/                           # Scripts de prueba temporales (ignorado en .gitignore)
-├── agent.md                        # Instrucciones principales del agente (raíz)
+├── .agents/rules/base.md                        # Instrucciones principales del agente (raíz)
 ├── ROADMAP.md                      # Plan de trabajo y prioridades
 ├── RELEASE_NOTES.md                # Historial de cambios por versión
 ├── RELEASE_MESSAGE.md              # Mensaje de anuncio del último lanzamiento

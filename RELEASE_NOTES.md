@@ -1,6 +1,6 @@
 # 🚀 Gallery-DL-GUI — Historial de Versiones
 
-📌 **Versión actual: `1.0.0` · Versión mínima requerida: `0.0.1`**
+📌 **Versión actual: `1.0.1` · Versión mínima requerida: `0.0.1`**
 
 > [!IMPORTANT]
 > **Estándar SemVer Flexible (Core-Docs v1.7.0):**
@@ -8,6 +8,18 @@
 > - Se incrementa `PATCH`, `MINOR` o `MAJOR` según el alcance real del cambio y compatibilidad, sin saltos forzados de versión basados únicamente en alcanzar un dígito 9.
 
 > Las versiones se muestran en orden descendente: la más reciente aparece arriba y la más antigua abajo.
+
+---
+
+## [1.0.1] - 2026-11-01
+
+Se incorpora un actualizador integrado del motor extractor (`gallery-dl`) dentro del panel de Ajustes, permitiendo consultar en tiempo real las nuevas versiones disponibles en Codeberg y descargarlas de forma atómica en el espacio de usuario con un solo clic, independizando la actualización del núcleo de extracción del ciclo de distribución de la aplicación.
+
+El binario de fábrica distribuido con la aplicación se actualiza a `gallery-dl v1.32.19`, incorporando de serie los últimos controladores y parches de compatibilidad de extractores para DeviantArt, Instagram, Newgrounds y plataformas multimedia de alta resolución.
+
+El instalador oficial para Windows se moderniza por completo con una plantilla limpia basada en Inno Setup, ofreciendo una presentación visual fluida con tema claro y oscuro automático adaptado a Windows 11, instalación por usuario sin requerir elevación de permisos de administrador y actualización transparente en el mismo directorio.
+
+Se unifican los metadatos de versión en todo el ecosistema de la aplicación, garantizando que el diálogo de Ajustes, el endpoint de estado de Aurora Synapse y el empaquetador informen de manera coherente la versión activa `1.0.1`.
 
 ---
 
