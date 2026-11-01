@@ -30,6 +30,8 @@ fun AppSettingsDialog(
     onOpenUrl: (String) -> Unit,
     appVersion: String = AppVersion.VALUE,
     engineVersion: String? = null,
+    cookieStatus: String? = null,
+    onReplaceCookie: (suspend () -> String?)? = null,
     onUpdateEngine: (suspend ((String) -> Unit) -> Unit)? = null,
     onDismiss: () -> Unit
 ) {
@@ -39,6 +41,7 @@ fun AppSettingsDialog(
     var isUpdatingEngine by remember { mutableStateOf(false) }
     var engineStatusMessage by remember { mutableStateOf<String?>(null) }
     var currentEngineVer by remember(engineVersion) { mutableStateOf(engineVersion) }
+    var cookieFeedback by remember(cookieStatus) { mutableStateOf(cookieStatus) }
 
     BoxWithConstraints {
         val isMobile = maxWidth < 560.dp
@@ -202,18 +205,37 @@ fun AppSettingsDialog(
                                     fontWeight = FontWeight.SemiBold
                                 )
                                 Text(
-                                    text = "Archivos de sesión para sitios restringidos.",
+                                    text = cookieFeedback ?: "Archivos de sesión para sitios restringidos.",
                                     style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    color = if (cookieFeedback?.startsWith("✅") == true) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
-                            OutlinedButton(
-                                onClick = onOpenCookiesFolder,
-                                shape = RoundedCornerShape(50),
-                                contentPadding = PaddingValues(horizontal = 14.dp, vertical = 4.dp),
-                                modifier = Modifier.height(34.dp)
-                            ) {
-                                Text("📁 Cookies", style = MaterialTheme.typography.labelMedium)
+                            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                if (onReplaceCookie != null) {
+                                    OutlinedButton(
+                                        onClick = {
+                                            coroutineScope.launch {
+                                                val res = onReplaceCookie()
+                                                if (res != null) {
+                                                    cookieFeedback = res
+                                                }
+                                            }
+                                        },
+                                        shape = RoundedCornerShape(50),
+                                        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 2.dp),
+                                        modifier = Modifier.height(34.dp)
+                                    ) {
+                                        Text("🔄 Reemplazar", style = MaterialTheme.typography.labelSmall)
+                                    }
+                                }
+                                OutlinedButton(
+                                    onClick = onOpenCookiesFolder,
+                                    shape = RoundedCornerShape(50),
+                                    contentPadding = PaddingValues(horizontal = 10.dp, vertical = 2.dp),
+                                    modifier = Modifier.height(34.dp)
+                                ) {
+                                    Text("📁", style = MaterialTheme.typography.labelSmall)
+                                }
                             }
                         }
                     } else {
@@ -271,18 +293,37 @@ fun AppSettingsDialog(
                                         fontWeight = FontWeight.Medium
                                     )
                                     Text(
-                                        text = "Archivos de sesión para sitios restringidos.",
+                                        text = cookieFeedback ?: "Archivos de sesión para sitios restringidos.",
                                         style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        color = if (cookieFeedback?.startsWith("✅") == true) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                 }
-                                OutlinedButton(
-                                    onClick = onOpenCookiesFolder,
-                                    shape = RoundedCornerShape(50),
-                                    contentPadding = PaddingValues(horizontal = 14.dp, vertical = 4.dp),
-                                    modifier = Modifier.height(34.dp)
-                                ) {
-                                    Text("📁 Cookies", style = MaterialTheme.typography.labelMedium)
+                                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                    if (onReplaceCookie != null) {
+                                        OutlinedButton(
+                                            onClick = {
+                                                coroutineScope.launch {
+                                                    val res = onReplaceCookie()
+                                                    if (res != null) {
+                                                        cookieFeedback = res
+                                                    }
+                                                }
+                                            },
+                                            shape = RoundedCornerShape(50),
+                                            contentPadding = PaddingValues(horizontal = 10.dp, vertical = 2.dp),
+                                            modifier = Modifier.height(34.dp)
+                                        ) {
+                                            Text("🔄 Reemplazar", style = MaterialTheme.typography.labelSmall)
+                                        }
+                                    }
+                                    OutlinedButton(
+                                        onClick = onOpenCookiesFolder,
+                                        shape = RoundedCornerShape(50),
+                                        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 2.dp),
+                                        modifier = Modifier.height(34.dp)
+                                    ) {
+                                        Text("📁", style = MaterialTheme.typography.labelSmall)
+                                    }
                                 }
                             }
                         }

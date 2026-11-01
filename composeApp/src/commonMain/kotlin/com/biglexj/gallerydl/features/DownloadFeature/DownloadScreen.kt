@@ -50,9 +50,11 @@ fun DownloadScreen(
     minimizeToTray: Boolean = true,
     themeMode: com.biglexj.gallerydl.theme.ThemeMode = com.biglexj.gallerydl.theme.ThemeMode.System,
     engineVersion: String? = null,
+    cookieStatus: String? = null,
     onSetAutoStart: (Boolean) -> Unit = {},
     onSetMinimizeToTray: (Boolean) -> Unit = {},
     onThemeModeSelected: (com.biglexj.gallerydl.theme.ThemeMode) -> Unit = {},
+    onReplaceCookie: (suspend () -> String?)? = null,
     onUpdateEngine: (suspend ((String) -> Unit) -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
@@ -239,6 +241,8 @@ fun DownloadScreen(
                     onOpenCookiesFolder = { onOpenFolder("D:\\Documentos\\cookies") },
                     onOpenUrl = onOpenUrl,
                     engineVersion = engineVersion,
+                    cookieStatus = cookieStatus,
+                    onReplaceCookie = onReplaceCookie,
                     onUpdateEngine = onUpdateEngine,
                     onDismiss = { showSettingsDialog = false }
                 )

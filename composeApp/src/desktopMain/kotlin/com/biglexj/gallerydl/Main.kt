@@ -112,6 +112,15 @@ fun main(args: Array<String>) {
             mutableStateOf(ThemeMode.values().firstOrNull { it.name.equals(saved, ignoreCase = true) } ?: ThemeMode.System)
         }
         var engineVersionState by remember { mutableStateOf<String?>(Downloader.getActiveEngineVersion()) }
+        var cookieStatusState by remember {
+            val file = File("D:\\Documentos\\cookies\\synced_cookies.txt")
+            val info = if (file.exists() && file.isFile) {
+                val bytes = file.length()
+                val sizeStr = if (bytes < 1024) "${bytes} B" else "${bytes / 1024} KB"
+                "Cargada ($sizeStr)"
+            } else null
+            mutableStateOf<String?>(info)
+        }
         var focusTrigger by remember { mutableStateOf(0) }
 
         // Listen for Synapse actions and focus requests from duplicate launches
@@ -153,6 +162,12 @@ fun main(args: Array<String>) {
             }
             InterceptionServer.registerCookiesListener { cookiesPath ->
                 externalCookiesFile = cookiesPath
+                val file = File(cookiesPath)
+                if (file.exists() && file.isFile) {
+                    val bytes = file.length()
+                    val sizeStr = if (bytes < 1024) "${bytes} B" else "${bytes / 1024} KB"
+                    cookieStatusState = "✅ Sincronizada ($sizeStr)"
+                }
             }
             InterceptionServer.registerHistoryListener { item ->
                 externalHistoryItem = item
@@ -256,6 +271,26 @@ fun main(args: Array<String>) {
                     minimizeToTray = minimizeToTrayState,
                     themeMode = themeModeState,
                     engineVersion = engineVersionState,
+                    cookieStatus = cookieStatusState,
+                    onReplaceCookie = {
+                        val selectedPath = DirectoryChooser.chooseCookieFile()
+                        if (selectedPath != null) {
+                            val sourceFile = File(selectedPath)
+                            if (sourceFile.exists() && sourceFile.isFile) {
+                                val cookiesDir = File("D:\\Documentos\\cookies").takeIf { it.exists() }
+                                    ?: File(System.getProperty("user.home"), "Documents/cookies").apply { mkdirs() }
+                                if (!cookiesDir.exists()) cookiesDir.mkdirs()
+                                val targetFile = File(cookiesDir, "synced_cookies.txt")
+                                sourceFile.copyTo(targetFile, overwrite = true)
+                                appSettings.defaultBrowserCookies = targetFile.absolutePath
+                                val bytes = targetFile.length()
+                                val sizeStr = if (bytes < 1024) "${bytes} B" else "${bytes / 1024} KB"
+                                val msg = "✅ Reemplazada ($sizeStr)"
+                                cookieStatusState = msg
+                                msg
+                            } else null
+                        } else null
+                    },
                     onUpdateEngine = { onStatus ->
                         onStatus("🔍 Comprobando última versión en Codeberg...")
                         val check = EngineUpdateService.checkUpdate()
