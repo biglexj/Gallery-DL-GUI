@@ -1,5 +1,6 @@
 package com.biglexj.gallerydl.features.DownloadFeature
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -37,11 +38,11 @@ fun AppSettingsDialog(
     var currentEngineVer by remember(engineVersion) { mutableStateOf(engineVersion) }
 
     BoxWithConstraints {
-        val isMobile = maxWidth < 520.dp
+        val isMobile = maxWidth < 560.dp
         val dialogModifier = if (isMobile) {
             Modifier.widthIn(max = 440.dp).fillMaxWidth(0.85f)
         } else {
-            Modifier.widthIn(max = 500.dp).fillMaxWidth(0.92f)
+            Modifier.widthIn(max = 600.dp).fillMaxWidth(0.95f)
         }
         val mainSpacing = if (isMobile) 10.dp else 8.dp
         val dividerPadding = if (isMobile) 4.dp else 2.dp
@@ -76,26 +77,88 @@ fun AppSettingsDialog(
                         .verticalScroll(rememberScrollState()),
                     verticalArrangement = Arrangement.spacedBy(mainSpacing)
                 ) {
-                    // 1. Iniciar con Windows
-                    SettingsRow(
-                        title = "Iniciar con Windows",
-                        subtitle = "Abre Gallery-DL GUI automáticamente al encender el equipo.",
-                        checked = autoStart,
-                        onCheckedChange = onSetAutoStart
-                    )
+                    // 1 y 2. Iniciar con Windows & Minimizar (Dos columnas en escritorio)
+                    if (isMobile) {
+                        SettingsRow(
+                            title = "Iniciar con Windows",
+                            subtitle = "Abre Gallery-DL GUI automáticamente al encender el equipo.",
+                            checked = autoStart,
+                            onCheckedChange = onSetAutoStart
+                        )
 
-                    HorizontalDivider(
-                        modifier = Modifier.padding(vertical = dividerPadding),
-                        color = MaterialTheme.colorScheme.outline.copy(alpha = 0.12f)
-                    )
+                        HorizontalDivider(
+                            modifier = Modifier.padding(vertical = dividerPadding),
+                            color = MaterialTheme.colorScheme.outline.copy(alpha = 0.12f)
+                        )
 
-                    // 2. Minimizar en lugar de cerrar
-                    SettingsRow(
-                        title = "Minimizar en lugar de cerrar",
-                        subtitle = "Al pulsar ✕, la app se oculta en la bandeja del sistema.",
-                        checked = minimizeToTray,
-                        onCheckedChange = onSetMinimizeToTray
-                    )
+                        SettingsRow(
+                            title = "Minimizar en lugar de cerrar",
+                            subtitle = "Al pulsar ✕, la app se oculta en la bandeja del sistema.",
+                            checked = minimizeToTray,
+                            onCheckedChange = onSetMinimizeToTray
+                        )
+                    } else {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(16.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            // Columna 1: Iniciar con Windows
+                            Row(
+                                modifier = Modifier.weight(1f),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Column(modifier = Modifier.weight(1f).padding(end = 8.dp)) {
+                                    Text(
+                                        text = "Iniciar con Windows",
+                                        style = MaterialTheme.typography.bodyLarge,
+                                        fontWeight = FontWeight.Medium
+                                    )
+                                    Text(
+                                        text = "Abre la app automáticamente al encender.",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                                Switch(
+                                    checked = autoStart,
+                                    onCheckedChange = onSetAutoStart
+                                )
+                            }
+
+                            Box(
+                                modifier = Modifier
+                                    .width(1.dp)
+                                    .height(44.dp)
+                                    .background(MaterialTheme.colorScheme.outline.copy(alpha = 0.12f))
+                            )
+
+                            // Columna 2: Minimizar en lugar de cerrar
+                            Row(
+                                modifier = Modifier.weight(1f),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Column(modifier = Modifier.weight(1f).padding(end = 8.dp)) {
+                                    Text(
+                                        text = "Minimizar al cerrar",
+                                        style = MaterialTheme.typography.bodyLarge,
+                                        fontWeight = FontWeight.Medium
+                                    )
+                                    Text(
+                                        text = "Al pulsar ✕, se oculta en la bandeja.",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                                Switch(
+                                    checked = minimizeToTray,
+                                    onCheckedChange = onSetMinimizeToTray
+                                )
+                            }
+                        }
+                    }
 
                     HorizontalDivider(
                         modifier = Modifier.padding(vertical = dividerPadding),
@@ -153,6 +216,8 @@ fun AppSettingsDialog(
                                                 style = MaterialTheme.typography.labelSmall,
                                                 color = MaterialTheme.colorScheme.onPrimaryContainer,
                                                 fontWeight = FontWeight.Bold,
+                                                softWrap = false,
+                                                maxLines = 1,
                                                 modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
                                             )
                                         }
