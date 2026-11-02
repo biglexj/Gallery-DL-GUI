@@ -8,7 +8,7 @@ Plan de trabajo, objetivos de producto y hoja de ruta estratégica del proyecto.
 
 ## 🔴 Pendientes activos
 
-- [ ] **v1.0.1** — Actualizador integrado del motor (`gallery-dl`), núcleo de fábrica en `v1.32.19` e instalador moderno de Windows (Inno Setup) listo para publicación.
+*No hay pendientes activos inmediatos. Versión v1.0.1 consolidada y publicada.*
 
 ---
 
@@ -26,6 +26,13 @@ Plan de trabajo, objetivos de producto y hoja de ruta estratégica del proyecto.
 ---
 
 ## 🟢 Completado
+
+- [x] **v1.0.1** — Actualizador integrado del motor (`gallery-dl`), núcleo de fábrica en `v1.32.19`, nuevo instalador moderno Inno Setup y panel de Ajustes en 2 columnas con cargador directo de cookies:
+  - Motor base actualizado a `gallery-dl v1.32.19`.
+  - Actualizador in-app del motor extractor con autodescarga atómica desde Codeberg.
+  - Rediseño simétrico del panel de Ajustes en dos columnas con cargador de cookies y botón de actualización de motor.
+  - Nuevo instalador oficial Biglex Modern 2.0 (Inno Setup) para Windows 11 sin elevación.
+  - Metadatos unificados y manifiestos WinGet para v1.0.1.
 
 - [x] **v1.0.0** — Primera versión mayor estable:
   - Renovación integral de branding con icono transparente canónico y diseño Material 3 Expressive.
