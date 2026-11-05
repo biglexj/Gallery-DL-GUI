@@ -30,9 +30,11 @@ const appVersion = readPropertiesVersion(join(root, "gradle.properties"));
 const appName = "Gallery-DL GUI";
 const repository = "biglexj/Gallery-DL-GUI";
 
-const help = `Gallery-DL GUI: mise <dev|build|release|publish> [opciones]
+const help = `Gallery-DL GUI: mise <dev|build|check|test|release|publish> [opciones]
   dev      Ejecutar en modo desarrollo (:composeApp:run).
   build    Compilar ejecutable de escritorio (:composeApp:packageExe) sin instalador.
+  check    Compilar el código Kotlin (:composeApp:compileKotlinDesktop) sin generar artefactos.
+  test     Ejecutar las pruebas unitarias (:composeApp:desktopTest).
   release  Generar instalador oficial Inno Setup en release/.
   publish  [github|all] Publicar en GitHub y sincronizar ficha en Aurora.
   --plan   Mostrar los comandos o el plan sin ejecutar acciones ni escribir.
@@ -42,6 +44,8 @@ Ejemplos:
   mise dev
   mise dev --plan
   mise build --plan
+  mise check --plan
+  mise test --plan
   mise release --plan
   mise publish --plan
   mise publish github --plan
@@ -162,6 +166,22 @@ export async function main(args = Bun.argv.slice(2)): Promise<number> {
         if (isPlan) return 0;
 
         console.log("\n==> Compilando ejecutable de escritorio Compose Multiplatform...");
+        const child = Bun.spawn(cmd, { cwd: root, stdin: "inherit", stdout: "inherit", stderr: "inherit" });
+        return (await child.exited) ?? 0;
+    }
+
+    if (action === "check") {
+        const cmd = ["cmd", "/c", "gradlew.bat", ":composeApp:compileKotlinDesktop"];
+        console.log(`check ${appName}\nDirectorio: ${root}\nComando: ${cmd.join(" ")}`);
+        if (isPlan) return 0;
+        const child = Bun.spawn(cmd, { cwd: root, stdin: "inherit", stdout: "inherit", stderr: "inherit" });
+        return (await child.exited) ?? 0;
+    }
+
+    if (action === "test") {
+        const cmd = ["cmd", "/c", "gradlew.bat", ":composeApp:desktopTest"];
+        console.log(`test ${appName}\nDirectorio: ${root}\nComando: ${cmd.join(" ")}`);
+        if (isPlan) return 0;
         const child = Bun.spawn(cmd, { cwd: root, stdin: "inherit", stdout: "inherit", stderr: "inherit" });
         return (await child.exited) ?? 0;
     }

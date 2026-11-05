@@ -11,6 +11,16 @@ raw_args = true
 description = "Compilar ejecutable de escritorio sin generar instalador"
 file = "scripts/mise-task.ts"
 
+[tasks.check]
+raw_args = true
+description = "Compilar el código Kotlin del módulo composeApp sin generar artefactos"
+file = "scripts/mise-task.ts"
+
+[tasks.test]
+raw_args = true
+description = "Ejecutar las pruebas unitarias del módulo composeApp"
+file = "scripts/mise-task.ts"
+
 [tasks.release]
 raw_args = true
 description = "Generar instalador oficial Inno Setup en release/ sin publicar"
